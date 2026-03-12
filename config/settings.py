@@ -8,7 +8,10 @@ dotenv.load_dotenv()
 class Settings:
     #文件相关的
     root_dir:str = pathlib.Path(__file__).parent.parent
-    file_dir:pathlib.Path = root_dir / 'uploads'
+    upload_dir:str = 'uploads'
+    file_dir:pathlib.Path = root_dir / upload_dir
+
+
 
 
 

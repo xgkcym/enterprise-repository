@@ -8,7 +8,6 @@ from api.database.config import async_engine
 from api.router.file.index import file_router
 import uvicorn
 
-from api.router.role.index import role_router
 from api.router.users.index import user_router
 
 
@@ -42,7 +41,6 @@ app.add_middleware(
 
 app.include_router(router=file_router)
 app.include_router(router=user_router)
-app.include_router(router=role_router)
 
 if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=1016)
