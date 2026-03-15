@@ -22,4 +22,6 @@ vector_store = PGVectorStore.from_params(
 )
 
 
+
+
 print(vector_store)

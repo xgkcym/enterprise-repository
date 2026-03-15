@@ -1,8 +1,3 @@
-
-from llama_index.core import Document
-
-import os
-
 from core.custom_types import DocumentMetadata
 
 

@@ -166,8 +166,8 @@ const inputMessage = ref('')
 const messages = ref([])
 const showLoginModal = ref(false)
 const loginForm = ref({
-    username: '',
-    password: ''
+    username: 'EdenXie',
+    password: '123456'
 })
 const userInfo = ref(localStorage.getItem('userInfo') ? JSON.parse(localStorage.getItem('userInfo')) : {
     username: '',

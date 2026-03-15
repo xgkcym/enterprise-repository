@@ -1,0 +1,7 @@
+faker
+python-docx
+openpyxl
+reportlab
+python-pptx
+tqdm
+pandas

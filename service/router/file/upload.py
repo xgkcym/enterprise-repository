@@ -1,5 +1,4 @@
-import time
-from typing import Tuple
+
 
 from fastapi import APIRouter, UploadFile, File, Form, Depends, HTTPException
 import os
@@ -7,13 +6,13 @@ import os
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select, insert, update
 
-from rag.ingestion.pipeline import pipeline
+from core.settings import settings
+from rag.rag_service import rag_service
 from service.database.connect import get_session
 from service.models.department import DepartmentModel
 from service.models.file import FileModel
 from service.models.users import UserModel
 from service.router.file.index import file_router
-from core.settings import settings
 from core.custom_types import DocumentMetadata
 from service.utils.config import upload_dir
 
@@ -61,35 +60,31 @@ async def upload_document(
     )
     res_file = file_result.first()
     if res_file:
-        # ========== 改动：PostgreSQL 时间格式化调整 ==========
-        old_file = res_file[0]
-        time_str = str(old_file.create_time).replace(" ", "_").replace(":", "_")
-        new_file_name = f"{''.join(file.filename.split('.')[:-1])}_{time_str}.{file.filename.split('.')[-1]}"
-        new_file_path = str(UPLOAD_DIR / department.dept_name / new_file_name)
-
-        os.rename(file_path, new_file_path)
-        await session.execute(
-            update(FileModel)
-            .where(FileModel.file_path == db_filepath, FileModel.state == '1')
-            .values(
-                state='0',
-                file_path='/public/uploads/' + department.dept_name + "/" + new_file_name,
-                file_name=new_file_name
+        # 是否覆盖旧文件
+        if not settings.delete_file:
+            old_file = res_file[0]
+            time_str = str(old_file.create_time).replace(" ", "_").replace(":", "_")
+            new_file_name = f"{''.join(file.filename.split('.')[:-1])}_{time_str}.{file.filename.split('.')[-1]}"
+            new_file_path = str(UPLOAD_DIR / department.dept_name / new_file_name)
+            os.rename(file_path, new_file_path)
+            await session.execute(
+                update(FileModel)
+                .where(FileModel.file_path == db_filepath, FileModel.state == '1')
+                .values(
+                    state='0',
+                    file_path='/public/uploads/' + department.dept_name + "/" + new_file_name,
+                    file_name=new_file_name
+                )
             )
-        )
+        else:
+            await session.execute(
+                update(FileModel)
+                .where(FileModel.file_path == db_filepath, FileModel.state == '1')
+                .values(
+                    state='0',
+                )
+            )
     file_content = await file.read()
-
-    with open(file_path, "wb") as f:
-        f.write(file_content)
-
-
-    file_data = FileModel(
-        user_id=user_id,
-        dept_id=department.dept_id,
-        file_name=file.filename,
-        file_path=db_filepath,
-        file_type=file.filename.split('.')[-1],
-    )
 
     # 保存数据库 metadata
     document = DocumentMetadata(
@@ -102,15 +97,26 @@ async def upload_document(
     )
 
     # 进行向量数据库存(切片->存储)
-    pipeline(file_content,document)
+    rag_service.pipeline(file_content,document)
 
-
-
+    # 数据库存储
+    file_data = FileModel(
+        user_id=user_id,
+        dept_id=department.dept_id,
+        file_name=file.filename,
+        file_path=db_filepath,
+        file_type=file.filename.split('.')[-1],
+    )
     session.add(file_data)
-    await session.commit()
 
+    # 文件写入
+    with open(file_path, "wb") as f:
+        f.write(file_content)
+
+    await session.commit()
     # 刷新以获取数据库生成的时间戳
     await session.refresh(file_data)
+
 
 
 

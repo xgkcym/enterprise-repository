@@ -33,7 +33,7 @@ async def login(
     # MD5 加密密码
     hashed_password = md5_hex(body.password)
     print(hashed_password)
-
+    print(body.username)
     # 查询用户
     result = await session.execute(
         select(UserModel).where(
@@ -42,11 +42,12 @@ async def login(
         )
     )
     user = result.scalar_one_or_none()
-
+    print("***" * 30)
+    print("***" * 30)
     if not user:
         raise HTTPException(
             status_code=401,
-            detail="用户名或密码错误"
+            detail="用户名或密码错误",
         )
 
     # 创建 Token
@@ -71,3 +72,7 @@ async def login(
             }
         }
     }
+
+if __name__ == '__main__':
+    hashed_password = md5_hex("123456")
+    print(hashed_password)
