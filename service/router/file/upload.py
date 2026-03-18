@@ -95,7 +95,7 @@ async def upload_document(
         file_path=db_filepath,
         file_size=file.size,
         file_type=file.filename.split('.')[-1],
-
+        source=file.filename.split('.')[-1],
         user_id=user_id,
         user_name=user.username,
         department_id=department.dept_id,

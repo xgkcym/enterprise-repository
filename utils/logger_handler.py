@@ -25,7 +25,7 @@ def get_logger(
     logger.addHandler(console_handler)
 
     if not log_file:
-        log_file = os.path.join(settings.log_dir, f"{name}_{time.strftime("%Y%m%d")}.log")
+        log_file = os.path.join(settings.log_dir, f"{name}_{time.strftime('%Y%m%d')}.log")
 
     file_handler = logging.FileHandler(log_file,encoding="utf-8")
     file_handler.setLevel(file_level)

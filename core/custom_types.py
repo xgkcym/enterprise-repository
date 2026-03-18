@@ -1,4 +1,3 @@
-import time
 
 from pydantic import BaseModel
 
@@ -12,7 +11,7 @@ class DocumentMetadata(BaseModel):
     file_type:str
     file_size:int
     source:str = None
-
+    sheet_name:str = None
     section_title:str = None
     page:int = None
 

@@ -679,3 +679,6 @@ metadata
 2026-03-17 19:33:00,205 - agent - INFO - [rag向量存储失败]:内容为空
 2026-03-17 19:37:37,978 - agent - INFO - [rag向量存储失败]:内容为空
 2026-03-17 19:38:41,135 - agent - INFO - [rag向量存储失败]:内容为空
+2026-03-17 19:47:10,406 - agent - INFO - [rag向量存储失败]:内容为空
+2026-03-17 20:25:40,354 - agent - ERROR - [rag向量存储失败]:存储文件:$public\uploads\TQ\文档上传测试.pdf---错误信息:$(Unimplemented) ConvertPirAttribute2RuntimeAttribute not support [pir::ArrayAttribute<pir::DoubleAttribute>]  (at ..\paddle\fluid\framework\new_executor\instruction\onednn\onednn_instruction.cc:118)
+

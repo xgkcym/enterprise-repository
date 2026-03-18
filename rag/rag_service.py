@@ -56,15 +56,15 @@ class RAGService:
 rag_service = RAGService()
 
 if  __name__ == "__main__":
-
     data = DocumentMetadata(
          department_id=1,
          department_name="TQ",
          user_id=1,
          user_name="EdenXie",
-         file_path="public\\uploads\\TQ\\文档上传测试.pdf",
-         file_name= "内部讨论邮件_1.txt",
+         file_path="public\\uploads\\TQ\\market_data_1.json",
+         file_name= "market_data_1.json",
          file_size=100,
-         file_type="pdf"
+         file_type="json",
+         source="json"
      )
-    rag_service.pipeline("D:\\python\\agent_project\\rag-agent\\service\\public\\uploads\\TQ\\文档上传测试.pdf",data)
+    rag_service.pipeline("D:\\python\\agent_project\\rag-agent\\service\\public\\uploads\\TQ\\market_data_1.json",data)

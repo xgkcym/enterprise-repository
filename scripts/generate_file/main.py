@@ -1,6 +1,9 @@
 import os
 import random
 import json
+from datetime import datetime, timedelta
+
+import pandas as pd
 from faker import Faker
 from reportlab.lib import colors
 from tqdm import tqdm
@@ -280,27 +283,47 @@ def generate_pdf(path):
 # Excel
 # -------------------------
 
+
 def generate_excel(path):
+    """
+    为每家公司+行业生成时间序列持仓数据，每个月一条
+    """
+    start_date = datetime(2024,1,1)
+    months = 12  # 12个月数据
+    data = []
 
-    wb=Workbook()
+    for c in companies:
+        company_name = c["name"]
+        industry = c["industry"]
 
-    ws=wb.active
-    ws.title="基金持仓"
+        # 初始持仓金额随机
+        prev_amount = random.randint(500000000, 5000000000)
+        prev_return = round(random.uniform(-5,5),2)
 
-    ws.append(["公司","行业","持仓金额","收益率"])
+        for month_offset in range(months):
+            date = start_date + timedelta(days=30*month_offset)
+            date_str = date.strftime("%Y-%m-%d")
 
-    for _ in range(500):
+            # 随机浮动
+            change = random.uniform(-0.05, 0.05)
+            amount = max(int(prev_amount * (1+change)), 10000000)
+            return_rate = round(prev_return + random.uniform(-2,2),2)
 
-        c=random.choice(companies)
+            data.append({
+                "日期": date_str,
+                "公司": company_name,
+                "行业": industry,
+                "持仓金额": amount,
+                "收益率": return_rate
+            })
 
-        ws.append([
-            c["name"],
-            c["industry"],
-            random.randint(100000000,5000000000),
-            round(random.uniform(-5,25),2)
-        ])
+            # 保存当前值用于下一个月
+            prev_amount = amount
+            prev_return = return_rate
 
-    wb.save(path)
+    # 写入 Excel
+    df = pd.DataFrame(data)
+    df.to_excel(path, index=False)
 
 
 
