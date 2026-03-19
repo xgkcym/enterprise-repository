@@ -50,9 +50,12 @@ class Settings(BaseSettings):
     log_dir:pathlib.Path = Field(default=pathlib.Path(__file__).parent.parent / "logs")
     log_format:logging.Formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
+
+    openai_api_key:str=Field(default=os.getenv("OPENAI_API_KEY"))
+    openai_model:str=Field(default=os.getenv("OPENAI_MODEL"))
     deepseek_url:str = Field(default=os.getenv("DEEPSEEK_URL"))
     deepseek_model:str = Field(default=os.getenv("DEEPSEEK_MODEL"))
-    deepseek_key:str = Field(default=os.getenv("DEEPSEEK_KEY"))
+    deepseek_api_key:str = Field(default=os.getenv("DEEPSEEK_API_KEY"))
 
 settings = Settings()
 

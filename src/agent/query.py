@@ -24,7 +24,6 @@ class QueryAgent:
         prompt = agent_query_prompt(query, chat_history, user_profile)
 
         response = self.llm.invoke(prompt)
-
         # ⚠️ 企业级必须做：JSON解析保护
         return self.parse_output(response)
 
@@ -43,3 +42,6 @@ class QueryAgent:
                 rewrite_query=response,
                 search_queries=[response]
             )
+
+
+query_agent = QueryAgent(llm=None)
