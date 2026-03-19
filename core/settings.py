@@ -33,6 +33,7 @@ class Settings(BaseSettings):
     pdf_chunk_size:int = Field(default=os.getenv("PDF_CHUNK_SIZE"))
     pdf_chunk_overlap:int = Field(default=os.getenv("PDF_CHUNK_OVERLAP"))
     orc_lang:str = Field(default=os.getenv("OCR_LANG"))
+    orc_min_score:float = Field(default=os.getenv("OCR_MIN_SCORE"))
     excel_chunk_size:int = Field(default=os.getenv("EXCEL_CHUNK_SIZE"))
     excel_min_chunk_size:int = Field(default=os.getenv("EXCEL_MIN_CHUNK_SIZE"))
     excel_chunk_overlap:int = Field(default=os.getenv("EXCEL_CHUNK_OVERLAP"))
@@ -43,6 +44,8 @@ class Settings(BaseSettings):
     json_chunk_size:int = Field(default=os.getenv("JSON_CHUNK_SIZE"))
     json_chunk_overlap:int = Field(default=os.getenv("JSON_CHUNK_OVERLAP"))
     json_min_chunk_size:int = Field(default=os.getenv("JSON_MIN_CHUNK_SIZE"))
+    image_chunk_size:int = Field(default=os.getenv("IMAGE_CHUNK_SIZE"))
+    image_chunk_overlap:int = Field(default=os.getenv("IMAGE_CHUNK_OVERLAP"))
 
     log_dir:pathlib.Path = Field(default=pathlib.Path(__file__).parent.parent / "logs")
     log_format:logging.Formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")

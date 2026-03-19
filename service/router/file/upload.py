@@ -1,13 +1,13 @@
 
 
-from fastapi import APIRouter, UploadFile, File, Form, Depends, HTTPException
+from fastapi import UploadFile, File, Form, Depends, HTTPException
 import os
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlmodel import select, insert, update
+from sqlmodel import select, update
 
 from core.settings import settings
-from rag.rag_service import rag_service
+from src.rag import rag_service
 from service.database.connect import get_session
 from service.models.department import DepartmentModel
 from service.models.file import FileModel
@@ -120,7 +120,7 @@ async def upload_document(
 
     try:
         # 进行向量数据库存(切片->存储) ---- 一定要等文件存储好再取读取
-        is_success = rag_service.pipeline(str(UPLOAD_DIR / department.dept_name / file.filename), document)
+        is_success = rag_service.ingestion(str(UPLOAD_DIR / department.dept_name / file.filename), document)
 
         if not is_success:
             if os.path.exists(file_path):
