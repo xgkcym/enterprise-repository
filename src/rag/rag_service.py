@@ -39,11 +39,9 @@ class RAGService:
             start_time = time.time()
             docs = load_file(path, metadata)
             if not docs or len(docs) == 0:
-                logger.info(f"[rag向量存储失败]:内容为空")
+                logger.error(f"[rag向量存储失败]:内容为空")
                 return False
             nodes = chunk_file(docs)
-
-
             VectorStoreIndex(
                 nodes=nodes,
                 storage_context=self.storage_context,
@@ -72,9 +70,12 @@ class RAGService:
 
         # 2. Dense检索
         print("***" * 50)
+        print(f"⌛检索数据")
         print(f"🎯Dense检索")
-        retriever = DenseRetriever(vector_store=vector_store,storage_context=self.storage_context)
-        docs = retriever.run(query_result.search_queries)
+        dense_retriever = DenseRetriever(vector_store=vector_store,storage_context=self.storage_context)
+        docs = dense_retriever.run(query_result.search_queries)
+        print("bm25检索")
+
 
         for doc in docs[:3]:
             print(doc["score"], doc["content"])

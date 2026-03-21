@@ -52,6 +52,7 @@ class Settings(BaseSettings):
     retriever_top_k:int = Field(default=os.getenv("RETRIEVER_TOP_K"))
     reranker_top_k:int = Field(default=os.getenv("RERANKER_TOP_K"))
     reranker_type:Literal["llm",'cross-encoder'] = Field(default=os.getenv("RERANKER_TYPE"))
+    bm5_retrieval_mode:Literal["lite",'es'] = Field(default=os.getenv("BM5_RETRIEVAL_MODE"))
     reranker_max_len:int = Field(default=os.getenv("RERANKER_MAX_LEN"))
     reranker_min_score:float = Field(default=os.getenv("RERANKER_MIN_SCORE"))
     context_max_len:int = Field(default=os.getenv("CONTEXT_MAX_LEN"))
