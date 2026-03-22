@@ -27,6 +27,17 @@ class DenseRetriever:
             self.retriever._filters = filters
             results = self.retriever.retrieve(query)
             for node in results:
+
+                # metadata过滤
+                if filters:
+                    skip = False
+                    for k, v in filters.items():
+                        if node["metadata"].get(k) != v:
+                            skip = True
+                            break
+                    if skip:
+                        continue
+
                 doc = {
                     "content": node.text,
                     "metadata": node.metadata,

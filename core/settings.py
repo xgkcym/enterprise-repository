@@ -21,9 +21,13 @@ class Settings(BaseSettings):
     database_string:str =  Field(default=str(os.getenv("DATABASE_STRING")))
     database_async_string:str =  Field(default=str(os.getenv("DATABASE_ASYNC_STRING")))
     vector_table_name:str = Field(default=os.getenv("VECTOR_TABLE_NAME"))
-    hf_token:str = Field(default=os.getenv("HF_TOKEN"))
     embedding_model:str = Field(default=os.getenv("EMBEDDING_MODEL"))
     embedding_dim:int = Field(default=os.getenv("EMBEDDING_DIM"))
+
+    mongodb_url:str = Field(default=os.getenv("MONGODB_URL"))
+    mongodb_db_name:str = Field(default=os.getenv("MONGODB_DB_NAME"))
+    doc_collection_name:str = Field(default=os.getenv("DOC_COLLECTION_NAME"))
+    elasticsearch_url:str = Field(default=os.getenv("ELASTICSEARCH_URL"))
 
     metadata_version:int = Field(default=os.getenv("METADATA_VERSION"))
     txt_chunk_size:int = Field(default=os.getenv("TXT_CHUNK_SIZE"))
@@ -52,7 +56,7 @@ class Settings(BaseSettings):
     retriever_top_k:int = Field(default=os.getenv("RETRIEVER_TOP_K"))
     reranker_top_k:int = Field(default=os.getenv("RERANKER_TOP_K"))
     reranker_type:Literal["llm",'cross-encoder'] = Field(default=os.getenv("RERANKER_TYPE"))
-    bm5_retrieval_mode:Literal["lite",'es'] = Field(default=os.getenv("BM5_RETRIEVAL_MODE"))
+    bm25_retrieval_mode:Literal["lite",'es'] = Field(default=os.getenv("BM25_RETRIEVAL_MODE"))
     reranker_max_len:int = Field(default=os.getenv("RERANKER_MAX_LEN"))
     reranker_min_score:float = Field(default=os.getenv("RERANKER_MIN_SCORE"))
     context_max_len:int = Field(default=os.getenv("CONTEXT_MAX_LEN"))
@@ -60,6 +64,8 @@ class Settings(BaseSettings):
     log_dir:pathlib.Path = Field(default=pathlib.Path(__file__).parent.parent / "logs")
     log_format:logging.Formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
+
+    hf_token:str = Field(default=os.getenv("HF_TOKEN"))
     reranker_model:str = Field(default=os.getenv("RERANKER_MODEL"))
     openai_api_key:str=Field(default=os.getenv("OPENAI_API_KEY"))
     openai_model:str=Field(default=os.getenv("OPENAI_MODEL"))

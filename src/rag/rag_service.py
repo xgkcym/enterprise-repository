@@ -3,6 +3,9 @@ import time
 import os
 
 from core.custom_types import DocumentMetadata
+from core.settings import settings
+from src.database.es import ElasticsearchClient
+from src.database.mongodb import mongodb_client
 from src.models.embedding import embed_model
 from src.models.llm import deepseek_llm
 from src.rag.context.builder import ContextBuilder
@@ -10,11 +13,13 @@ from src.rag.generation.generator import Generator
 from src.rag.query.query_processor import QueryProcessor
 from src.rag.rerank.reranker import Reranker
 from src.rag.retrieval.dense import DenseRetriever
+from src.rag.retrieval.hybrid import HybridRetriever
 from utils.logger_handler import logger
 from llama_index.core import VectorStoreIndex, Settings, StorageContext
 from src.rag.ingestion.loader import  load_file
 from src.rag.store.vector_store import vector_store
 from src.rag.ingestion.chunker import chunk_file
+from src.rag.retrieval.bm25 import BM25LiteRetriever,ESRetriever
 
 
 class RAGService:
@@ -25,7 +30,15 @@ class RAGService:
         self.storage_context = StorageContext.from_defaults(
             vector_store=vector_store,
         )
+        if  settings.bm25_retrieval_mode == "lite":
+            self.doc_collection = mongodb_client.get_collection(settings.doc_collection_name)
+        elif settings.bm25_retrieval_mode == "es":
+            self.doc_collection = ElasticsearchClient(settings.doc_collection_name)
+        else:
+            raise Exception('bm25_retrieval_mode 参数错误')
 
+        self.bm25_retriever = None
+        self._create_bm25_retrieval()
     def ingestion(self, path:str, metadata: DocumentMetadata):
         """
         对文件路径的单个文件进行数据向量存储
@@ -41,7 +54,11 @@ class RAGService:
             if not docs or len(docs) == 0:
                 logger.error(f"[rag向量存储失败]:内容为空")
                 return False
+
             nodes = chunk_file(docs)
+
+            self.doc_collection.insert_many([{"content":node.text, "metadata":node.metadata} for node in nodes])
+
             VectorStoreIndex(
                 nodes=nodes,
                 storage_context=self.storage_context,
@@ -55,7 +72,15 @@ class RAGService:
             logger.error(f"[rag向量存储失败]:存储文件:${metadata.file_path}---错误信息:${str(e)}")
             raise Exception(f"[rag向量存储失败]:存储文件:${metadata.file_path}---错误信息:${str(e)}") from e
 
-
+    def _create_bm25_retrieval(self):
+        if settings.bm25_retrieval_mode == "lite":
+            docs = self.doc_collection.find({}).to_list()
+            if docs:
+                self.bm25_retriever = BM25LiteRetriever(documents=docs)
+        elif settings.bm25_retrieval_mode == "es":
+            self.bm25_retriever = ESRetriever(es_client=self.doc_collection)
+        else:
+            raise Exception('bm25_retrieval_mode 参数错误')
 
     def query(self,query:str,user_context:dict):
         """检索RAG内容"""
@@ -72,14 +97,31 @@ class RAGService:
         print("***" * 50)
         print(f"⌛检索数据")
         print(f"🎯Dense检索")
+        docs = []
         dense_retriever = DenseRetriever(vector_store=vector_store,storage_context=self.storage_context)
-        docs = dense_retriever.run(query_result.search_queries)
-        print("bm25检索")
-
-
-        for doc in docs[:3]:
+        dense_docs = dense_retriever.run(query_result.search_queries)
+        docs.extend(dense_docs)
+        for doc in dense_docs[:3]:
             print(doc["score"], doc["content"])
             print("***" * 50)
+
+
+        if not self.bm25_retriever:
+            self._create_bm25_retrieval()
+        if self.bm25_retriever:
+            print("🎯bm25检索")
+            bm25_docs = self.bm25_retriever.run(query_result.search_queries)
+            docs.extend(bm25_docs)
+            for doc in bm25_docs[:3]:
+                print(doc["bm25_score"], doc["content"])
+                print("***" * 50)
+
+
+            print("🎯hybrid检索")
+            hybrid_docs = HybridRetriever(dense_retriever, self.bm25_retriever).run(query_result.search_queries)
+            docs.extend(hybrid_docs)
+            for doc in hybrid_docs[:3]:
+                print(doc['content'])
 
         # 3.reranker重排
         print("***" * 50)
@@ -115,11 +157,24 @@ if  __name__ == "__main__":
     #      department_name="TQ",
     #      user_id=1,
     #      user_name="EdenXie",
-    #      file_path="public\\uploads\\TQ\\文档上传测试.pdf",
-    #      file_name= "文档上传测试.pdf",
+    #      file_path="public\\uploads\\TQ\\a1.png",
+    #      file_name= "a1.png",
     #      file_size=100,
-    #      file_type="pdf",
-    #      source="pdf"
+    #      file_type="png",
+    #      source="png"
     #  )
+    # rag_service.ingestion("E:\\AIGC\\project\\enterprise-repository\\service\\public\\uploads\\TQ\\a1.png",data)
+    # data = DocumentMetadata(
+    #     department_id=1,
+    #     department_name="TQ",
+    #     user_id=1,
+    #     user_name="EdenXie",
+    #     file_path="public\\uploads\\TQ\\文档上传测试.pdf",
+    #     file_name="文档上传测试.pdf",
+    #     file_size=100,
+    #     file_type="pdf",
+    #     source="pdf"
+    # )
+    # rag_service.ingestion("E:\\AIGC\\project\\enterprise-repository\\service\\public\\uploads\\TQ\\文档上传测试.pdf", data)
     # rag_service.ingestion("D:\\python\\agent_project\\rag-agent\\service\\public\\uploads\\TQ\\文档上传测试.pdf",data)
-    rag_service.query("新格林耐特网络有限公司成立于哪一年",{})
+    rag_service.query("给我科普一下金融知识",{})
