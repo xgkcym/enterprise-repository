@@ -41,7 +41,7 @@ class ContextBuilder:
 
         for i, doc in enumerate(docs):
             context_parts.append(
-                f"[文档{i+1}]\n{doc['content']}"
+                f"[chunk{i+1}]\n{doc['content']}"
             )
 
         return "\n\n".join(context_parts)

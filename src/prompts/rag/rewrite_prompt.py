@@ -16,17 +16,18 @@ REWRITE_PROMPT = """
 3. 使用清晰、具体、专业表达
 4. 去除模糊指代（如“这个”“那个”）
 5. 不要添加不存在的信息
-
+6. 输出格式必须是JSON格式
 ---
 
-【语言规则】
+【字段说明】
 
 - rewrite_query：使用用户原始语言
+- chinese_query：使用中文表达（用于中文检索）
 - english_query：提供等价英文表达（用于跨语言检索）
-
+- intent：意图分类（factoid/analysis/comparison）
 ---
 
-【意图分类】
+【intent（意图分类）】
 
 必须选择一个：
 - factoid（事实查询）
@@ -45,12 +46,13 @@ REWRITE_PROMPT = """
 
 ---
 
-【输出（严格JSON）】
+输出JSON：
 
 {{
   "rewrite_query": "...",
+  "chinese_query": "...",
   "english_query": "...",
-  "intent": "factoid" | "analysis" | "comparison"
+  "intent": ""
 }}
 
 ---

@@ -7,9 +7,11 @@ from core.settings import settings
 from src.database.es import ElasticsearchClient
 from src.database.mongodb import mongodb_client
 from src.models.embedding import embed_model
-from src.models.llm import deepseek_llm
+from src.models.llm import deepseek_llm, chatgpt_llm
 from src.rag.context.builder import ContextBuilder
+from src.rag.generation.answer_verify import verify_answer
 from src.rag.generation.generator import Generator
+from src.rag.generation.translate import translate
 from src.rag.query.query_processor import QueryProcessor
 from src.rag.rerank.reranker import Reranker
 from src.rag.retrieval.dense import DenseRetriever
@@ -25,6 +27,7 @@ from src.rag.retrieval.bm25 import BM25LiteRetriever,ESRetriever
 class RAGService:
     def __init__(self):
         self.llm = deepseek_llm
+        self.chatgpt_llm = chatgpt_llm
         Settings.embed_model = embed_model
         Settings.llm = self.llm
         self.storage_context = StorageContext.from_defaults(
@@ -143,11 +146,17 @@ class RAGService:
         # 5. 生成答案
         print("***" * 50)
         print("💬生成答案")
-        generator = Generator(llm=self.llm)
+        generator = Generator(llm=self.chatgpt_llm)
         response = generator.run(query_result.rewrite_query, context)
-        print(response)
+        print(response.answer)
 
-        return response
+        # 6. 验证跟翻译
+        verify = verify_answer(llm=self.llm, context=response.citations, answer=response.answer)
+        if not verify:
+            return response.answer
+        else:
+            return translate(llm=self.llm, query=query)
+
 
 rag_service = RAGService()
 
@@ -163,7 +172,7 @@ if  __name__ == "__main__":
     #      file_type="png",
     #      source="png"
     #  )
-    # rag_service.ingestion("E:\\AIGC\\project\\enterprise-repository\\service\\public\\uploads\\TQ\\a1.png",data)
+    # rag_service.ingestion("D:\\python\\agent_project\\rag-agent\\service\\public\\uploads\\TQ\\a1.png",data)
     # data = DocumentMetadata(
     #     department_id=1,
     #     department_name="TQ",
@@ -175,6 +184,6 @@ if  __name__ == "__main__":
     #     file_type="pdf",
     #     source="pdf"
     # )
-    # rag_service.ingestion("E:\\AIGC\\project\\enterprise-repository\\service\\public\\uploads\\TQ\\文档上传测试.pdf", data)
+    # rag_service.ingestion("D:\\python\\agent_project\\rag-agent\\service\\public\\uploads\\TQ\\文档上传测试.pdf", data)
     # rag_service.ingestion("D:\\python\\agent_project\\rag-agent\\service\\public\\uploads\\TQ\\文档上传测试.pdf",data)
-    rag_service.query("给我科普一下金融知识",{})
+    print(rag_service.query("Give me a brief introduction to financial knowledge",{}))
