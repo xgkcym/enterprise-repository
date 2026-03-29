@@ -16,7 +16,8 @@ GEN_PROMPT = """
 5. 尽量使用原文信息
 6. 每个结论必须标注来源（node_id）
 7. 根据用户的语言回答（英文提问，英文回答；中文提问，中文回答）
-8. 输出格式必须是JSON格式
+8. 如果有答案is_sufficient为True,否则为False
+9. 输出格式必须是JSON格式
 ---
 
 【用户问题】
@@ -35,7 +36,8 @@ GEN_PROMPT = """
 
 {{
   "answer": "...",
-  "citations": ["node_id1", "node_id2"]
+  "citations": ["node_id1", "node_id2"],
+  "is_sufficient":False
 }}
 
 ---

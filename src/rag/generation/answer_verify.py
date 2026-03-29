@@ -1,3 +1,5 @@
+from typing import Optional
+
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import HumanMessage
 from pydantic import BaseModel, Field
@@ -11,6 +13,7 @@ class AnswerVerifyResult(BaseModel):
         验证回答是否正确
     """
     valid: bool = Field(...,description="回答是否正确")
+    reason:Optional[str] = Field(...,description="理由")
 
 def verify_answer(llm:BaseChatModel, context, answer):
 

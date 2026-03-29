@@ -20,7 +20,7 @@ def evaluate_rerank(retrieval,reranker, benchmark, top_k=settings.reranker_top_k
         gt = item["node_ids"]
 
         # Recall@K
-        recall = recall_at_k(docs, gt, top_k)
+        recall = recall_at_k(docs, gt)
         total_recall += recall
 
         # MRR
@@ -28,7 +28,7 @@ def evaluate_rerank(retrieval,reranker, benchmark, top_k=settings.reranker_top_k
         total_mrr += mrr
 
         # Coverage（关键）
-        cov = coverage(docs, gt, top_k)
+        cov = coverage(docs, gt)
         total_coverage += cov
 
     n = len(benchmark)

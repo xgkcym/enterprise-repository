@@ -11,7 +11,6 @@ const request = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
-  withCredentials: true,
 });
 
 const whitelist = ["/user/login"];
@@ -57,7 +56,7 @@ request.interceptors.response.use(
       errorTime = now;
       if (!error.response) {
         //网络请求
-        ElMessage.error(t("网络错误"));
+        ElMessage.error("网络错误");
       } else {
         if (error.response.status == 401) {
           ElMessage.error("登录过期");

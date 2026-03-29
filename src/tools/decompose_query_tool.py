@@ -13,7 +13,7 @@ class DecomposeResult(BaseModel):
     """
     sub_queries:List[str] = Field(...,description="子问题列表")
 
-def decompose_query(llm:BaseChatModel, query: str, chat_history=None):
+def decompose_query_tool(llm:BaseChatModel, query: str, chat_history=None):
     from src.prompts.agent.decompose import DECOMPOSE_PROMPT
     prompt = DECOMPOSE_PROMPT.format(query=query, chat_history=chat_history or [])
     try:

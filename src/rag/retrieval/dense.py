@@ -45,7 +45,7 @@ class DenseRetriever:
                 doc = {
                     "content": node.text,
                     "metadata": node.metadata,
-                    "score": node.score,
+                    "dense_score": node.score,
                     "node_id": node.node_id
                 }
                 all_results.append(doc)

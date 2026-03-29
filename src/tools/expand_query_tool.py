@@ -13,7 +13,7 @@ class ExpandResult(BaseModel):
     """
     queries:List[str] = Field(...,description="扩展查询列表")
 
-def expand_query(llm:BaseChatModel, query: str, chat_history=None):
+def expand_query_tool(llm:BaseChatModel, query: str, chat_history=None):
 
     prompt = EXPAND_PROMPT.format(query=query, chat_history=chat_history or [])
 

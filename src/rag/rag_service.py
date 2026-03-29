@@ -146,9 +146,6 @@ class RAGService:
         # 2. 召回检索
         print("🎯hybrid检索")
         hybrid_docs = HybridRetriever(self.dense_retriever, self.bm25_retriever).run(search_queries)
-        for doc in hybrid_docs[:3]:
-            print(doc['content'])
-
         doc_ids = []
         docs= []
         for doc in hybrid_docs:
@@ -160,7 +157,7 @@ class RAGService:
         print("***" * 50)
         print("🥇reranker重排")
         docs = self.rerank.run(f"{query_context.query} {query_context.rewritten_query}", docs[:settings.retriever_top_k])
-        for doc in docs[:3]:
+        for doc in docs:
             print(doc["rerank_score"], doc["content"])
             print("***" * 50)
 
@@ -171,7 +168,6 @@ class RAGService:
         context_builder = ContextBuilder()
         context = context_builder.run(docs)
         print(context)
-
         # 5. 生成答案
         print("***" * 50)
         print("💬生成答案")
@@ -179,16 +175,22 @@ class RAGService:
 
         # documents = [node_id in [item['node_id'] for item in docs ]  for node_id in response.citations]
 
-        # 6. 验证跟翻译
-        verify = verify_answer(llm=self.llm, context=response.citations, answer=response.answer)
-        if not verify:
-            return RAGResult(
-                answer=response.answer,
-                documents=docs,
-                is_sufficient=True
-            )
+        if response.is_sufficient:
+            # 6. 验证跟翻译
+            verify = verify_answer(llm=self.chatgpt_llm, context=context, answer=response.answer)
+            if verify:
+                return RAGResult(
+                    answer=response.answer,
+                    documents=docs,
+                    is_sufficient=True
+                )
+            else:
+                return RAGResult(
+                    answer=response.answer,
+                    documents=docs,
+                    is_sufficient=False
+                )
         else:
-            # return translate(llm=self.llm, query=query)
             return RAGResult(
                 answer=response.answer,
                 documents=docs,
@@ -208,10 +210,9 @@ class RAGService:
         for doc in docs:
             try:
                 dense_docs = self.dense_retriever.run([doc['content']], top_k=5)
-                print(dense_docs)
-                dense_docs = [item for item in dense_docs if item['score'] > 0.8]
+                dense_docs = [item for item in dense_docs if item['dense_score'] > 0.8]
                 if dense_docs:
-                    dense_docs = sorted(dense_docs, key=lambda x: x['score'], reverse=True)[
+                    dense_docs = sorted(dense_docs, key=lambda x: x['dense_score'], reverse=True)[
                         :min(3, settings.reranker_top_k - 2)]
                 qa_list = generate_qa(llm=self.llm, nodes=[doc, *dense_docs], metadata=doc['metadata'])
                 if qa_list:
@@ -286,4 +287,5 @@ if  __name__ == "__main__":
     # rag_service.ingestion("D:\\python\\agent_project\\rag-agent\\service\\public\\uploads\\TQ\\文档上传测试.pdf", data)
     # rag_service.ingestion("D:\\python\\agent_project\\rag-agent\\service\\public\\uploads\\OE\\fund_report_1.pdf",data)
     # rag_service.benchmark()
-    # rag_service.generation_evaluate_data()
+
+    rag_service.generation_evaluate_data()

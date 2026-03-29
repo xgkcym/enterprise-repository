@@ -15,6 +15,7 @@ class GeneratorResult(BaseModel):
     """
     answer: str = Field(...,description="回答内容")
     citations: list[str] = Field(...,description="引用的node编号")
+    is_sufficient:bool = Field(...,description="是否能够回答问题")
 
 def generate_answer (llm:BaseChatModel, query: str, context: str):
         prompt = GEN_PROMPT.format(

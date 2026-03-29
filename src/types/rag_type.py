@@ -2,7 +2,9 @@ from typing import TypedDict, List, Optional, Literal
 
 from pydantic import BaseModel, Field
 
+from core.custom_types import DocumentMetadata
 from core.settings import settings
+from src.types.base_type import BaseToolResult
 
 
 class RagContext(BaseModel):
@@ -19,31 +21,28 @@ class RagContext(BaseModel):
     use_retrieval:bool = Field(default=True,description="是否需要重新召回")
     use_rerank: bool = Field(default=True,description="是否需要重新重排")
 
-    # ===== 历史信息（用于二次决策）=====
-    previous_attempts: int = Field(default = 0,description="第几次尝试rag")       # 第几次尝试
-    previous_fail_reason: Optional[str] = Field(default=[],description="rag历史信息")
+
+class DocumentInfo(BaseModel):
+    content:str = Field(default="",description="文档内容")
+    metadata:Optional[DocumentMetadata] = Field(default_factory=lambda:DocumentMetadata(),description="文档信息")
+    dense_score:Optional[float] = Field(default=None,description="向量分数")
+    bm25_score:Optional[float] = Field(default=None,description="语义相似度分数")
+    rerank_score:Optional[float] = Field(default=None,description="重排分数")
+    node_id:Optional[str] = Field(default="",description="片段ID")
 
 
-
-class RAGResult(BaseModel):
-    # ===== 最终输出 =====
-    answer: Optional[str] = Field(default="",description="回答")
-
+class RAGResult(BaseToolResult):
+    tool_name = 'rag'
     # ===== 检索信息 =====
-    documents: List[dict] = Field(default=[],description="检索到的文档")
-
-    # ===== 质量评估（核心）=====
-    confidence: float = Field(default=0.0,description="0~1（模型或规则估计）")
-    coverage: float = Field(default=0.0,description="覆盖度（是否回答完整）")
+    documents: List[DocumentInfo] = Field(default=[], description="检索到的文档")
 
     # ===== 诊断信息（给Agent用）=====
-    is_sufficient: bool = Field(default=False,description="是否足够回答")
     fail_reason:  Literal[
         "low_recall",      # 没召回
         "bad_ranking",     # 排序差
         "ambiguous_query", # query不清晰
         "no_data",         # 没数据
-    ] = Field(default=None,description="召回说明")
+    ] = Field(default=None,description="诊断信息")
 
     # ===== 行为建议（关键设计）=====
     suggested_actions: List[Literal[
@@ -51,8 +50,9 @@ class RAGResult(BaseModel):
         "rewrite",
         "expand",
         "decompose",
+        "retrieval",
+        "rerank",
         "abort"
     ]] = Field(default=None,description="行为建议")
 
-    # ===== 调试信息 =====
-    debug_info: Optional[dict] = Field(default=None,description="调试信息")
+
