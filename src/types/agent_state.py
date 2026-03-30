@@ -1,8 +1,7 @@
-from typing import Optional, Literal, List, Dict
+from typing import Optional, Literal, List, Dict, Any
 from pydantic import BaseModel, ConfigDict, Field
 
-from src.types.base_type import BaseLLMDecideResult, BaseToolResult
-from src.types.rag_type import RagContext, RAGResult
+from src.types.base_type import ToolEvent
 
 
 class State(BaseModel):
@@ -13,27 +12,30 @@ class State(BaseModel):
     )
     query: Optional[str]
 
-    rewritten_query: Optional[str] = Field(default="",description="重写查询")
+    working_query: Optional[str] = Field(default="",description="当前工作查询")
 
-    expand_query:List[str] = Field(default=[],description="拓展查询")
+    rewrite_attempt: int = Field(default=0,description="重写查询尝试次数")
 
-    decompose_query:List[str] = Field(default=[],description="子任务规划")
+    # rewritten_query: Optional[str] = Field(default="",description="重写查询")
+    #
+    # expand_query:List[str] = Field(default=[],description="拓展查询")
+    #
+    # decompose_query:List[str] = Field(default=[],description="子任务规划")
 
     answer:  Optional[str] = Field(default="",description="回答")
 
     chat_history:List[str] = Field(default=[],description="短期记忆")
 
-    user_profile:Dict[str,any] = Field(default=None,description="用户画像")
+    user_profile:Optional[Dict[str, Any]] = Field(default=None,description="用户画像")
 
     reason:Optional[str] = Field(default="",description="推断结果")
 
-    tool_request:RagContext | Optional[Dict[str,any]] =  Field(default_factory=lambda:RagContext(),description="工具请求参数")
+    current_input:Optional[Any] = Field(default=None,description="当前输入")
 
-    tool_result:Optional[BaseToolResult] =  Field(default_factory=lambda :BaseToolResult(),description="工具返回的数据")
+    tool_history:List[ToolEvent] = Field(default=[],description="工具调用历史")
 
-    llm_decide_result:Optional[BaseLLMDecideResult] = Field(default_factory=lambda :BaseLLMDecideResult(),description="LLM诊断返回的数据")
+    query_used:bool = Field(default=False,description="当前查询是否已经被用于检索")
 
-    previous_call_tool_request:List[RagContext | Optional[Dict[str,any]]] = Field(default=[],description="历史调用的工具参数")
-    previous_call_tool_result:List[Optional[BaseToolResult]] = Field(default=[],description="历史调用的工具结果")
+    last_action: Optional[str] = Field(default="",description="上一步行动")
 
     action:Optional[str] = Field(default="",description="下一步行动")

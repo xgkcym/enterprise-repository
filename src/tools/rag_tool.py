@@ -57,5 +57,5 @@ def decide_fail_reason(rag_result: RAGResult) ->  Literal[
 
 
 
-def rag_tool(query:RagContext,user_context:dict):
+def rag_tool(query:RagContext,user_context:dict)->RAGResult:
     return rag_service.query(query,user_context)

@@ -32,27 +32,27 @@ class DocumentInfo(BaseModel):
 
 
 class RAGResult(BaseToolResult):
-    tool_name = 'rag'
+    tool_name : Optional[str] =  'rag'
     # ===== 检索信息 =====
     documents: List[DocumentInfo] = Field(default=[], description="检索到的文档")
 
     # ===== 诊断信息（给Agent用）=====
-    fail_reason:  Literal[
-        "low_recall",      # 没召回
-        "bad_ranking",     # 排序差
-        "ambiguous_query", # query不清晰
-        "no_data",         # 没数据
-    ] = Field(default=None,description="诊断信息")
-
-    # ===== 行为建议（关键设计）=====
-    suggested_actions: List[Literal[
-        "retry",
-        "rewrite",
-        "expand",
-        "decompose",
-        "retrieval",
-        "rerank",
-        "abort"
-    ]] = Field(default=None,description="行为建议")
+    # fail_reason:  Literal[
+    #     "low_recall",      # 没召回
+    #     "bad_ranking",     # 排序差
+    #     "ambiguous_query", # query不清晰
+    #     "no_data",         # 没数据
+    # ] = Field(default=None,description="诊断信息")
+    #
+    # # ===== 行为建议（关键设计）=====
+    # suggested_actions: List[Literal[
+    #     "retry",
+    #     "rewrite",
+    #     "expand",
+    #     "decompose",
+    #     "retrieval",
+    #     "rerank",
+    #     "abort"
+    # ]] = Field(default=None,description="行为建议")
 
 

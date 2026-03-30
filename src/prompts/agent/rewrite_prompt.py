@@ -33,7 +33,7 @@ REWRITE_PROMPT = """
 输出JSON：
 
 {{
-  "rewrite_query": "...",
+  "answer": "...",
 }}
 
 ---

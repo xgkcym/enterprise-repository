@@ -1,16 +1,22 @@
 from src.models.llm import deepseek_llm
-from src.tools.rewrite_query_tool import rewrite_query_tool
+from src.tools.rewrite_query_tool import rewrite_query_tool, RewriteResult
 from src.types.agent_state import State
+from src.types.base_type import ToolEvent
 
 
 def rewrite_query_node(state:State):
-    query = state.query
-    if len(query) < 20:
-        rewritten = rewrite_query_tool(deepseek_llm,state.query,state.chat_history)
+    query = state.working_query or state.query
+    if len(query) > 10:
+        rewritten:RewriteResult = rewrite_query_tool(deepseek_llm,state.working_query,state.chat_history)
     else:
-        rewritten = state.query
-    state.rag_context.rewritten_query = rewritten
+        rewritten = RewriteResult(
+            answer=query,
+        )
+
+    print(f"重写之前:{query}")
+    print(f"重写查询:{rewritten.answer}")
     return {
-        "rewritten_query": rewritten,
-        "rag_context":state.rag_context
+        "working_query":rewritten.answer,
+        "query_used":False,
+        "rewrite_attempt": state.rewrite_attempt + 1,
     }
