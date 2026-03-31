@@ -182,21 +182,24 @@ class RAGService:
                 return RAGResult(
                     answer=response.answer,
                     documents=docs,
-                    is_sufficient=True
+                    is_sufficient=True,
+                    citations=response.citations
                 )
             else:
                 return RAGResult(
                     answer=response.answer,
                     fail_reason="verification_failed",
                     documents=docs,
-                    is_sufficient=False
+                    is_sufficient=False,
+                    citations=response.citations
                 )
         else:
             return RAGResult(
                 answer=response.answer,
                 documents=docs,
                 is_sufficient=False,
-                fail_reason=response.fail_reason
+                fail_reason=response.fail_reason,
+                citations=response.citations
             )
 
 

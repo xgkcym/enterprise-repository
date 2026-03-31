@@ -1,13 +1,16 @@
 from langgraph.constants import END
 
-route_list = [
-  "rewrite_query",
-  # "expand_query",
-  # "decompose_query",
-  'rag',
-  "abort",
-  "finish"
+reasoning_route = [
+    "rewrite_query",
+    "expand_query",
+    "decompose_query",
 ]
+
+tool_route = [
+    'rag',
+]
+
+route_list = reasoning_route + tool_route + ["abort","finish"]
 
 route_map = {
 

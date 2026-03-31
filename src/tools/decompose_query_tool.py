@@ -5,16 +5,16 @@ from langchain_core.messages import HumanMessage
 from pydantic import BaseModel, Field
 
 from src.congfig.llm_config import LLMService
+from src.types.base_type import BaseToolResult
+from src.prompts.agent.decompose import DECOMPOSE_PROMPT
 
 
-class DecomposeResult(BaseModel):
+class DecomposeResult(BaseToolResult):
     """
        问题拆解助手返回的数据
     """
-    sub_queries:List[str] = Field(...,description="子问题列表")
 
 def decompose_query_tool(llm:BaseChatModel, query: str, chat_history=None):
-    from src.prompts.agent.decompose import DECOMPOSE_PROMPT
     prompt = DECOMPOSE_PROMPT.format(query=query, chat_history=chat_history or [])
     try:
         response: DecomposeResult = LLMService.invoke(
@@ -22,7 +22,10 @@ def decompose_query_tool(llm:BaseChatModel, query: str, chat_history=None):
             messages=[HumanMessage(content=prompt)],
             schema=DecomposeResult
         )
-
-        return response.sub_queries
+        response.is_sufficient = True
+        return response
     except Exception:
-        return []
+        return DecomposeResult(
+            answer=[],
+            is_sufficient=False,
+        )

@@ -11,9 +11,9 @@ class RagContext(BaseModel):
     query: Optional[str] = Field(default="",description="原始查询")
     rewritten_query: Optional[str] = Field(default="", description="重写查询")
 
-    expand_query: List[str] = Field(default=[], description="拓展查询")
+    expand_query: Optional[List[str]] = Field(default=[], description="拓展查询")
 
-    decompose_query: List[str] = Field(default=[], description="子任务规划")
+    decompose_query: Optional[List[str]] = Field(default=[], description="子任务规划")
 
     # ===== 检索控制 =====
     retrieval_top_k: int = Field(default=settings.retriever_top_k,description="向量召回数量")
@@ -32,9 +32,12 @@ class DocumentInfo(BaseModel):
 
 
 class RAGResult(BaseToolResult):
-    tool_name : Optional[str] =  'rag'
+    name : Optional[str] =  'rag'
     # ===== 检索信息 =====
     documents: List[DocumentInfo] = Field(default=[], description="检索到的文档")
+
+    citations: List[str] = Field(default=[], description="生成答案中引用")
+
 
     # ===== 诊断信息（给Agent用）=====
     fail_reason:  Literal[
@@ -43,7 +46,7 @@ class RAGResult(BaseToolResult):
         "ambiguous_query", # query不清晰
         "no_data",         # 没数据
         "verification_failed", # 验证不通过
-        "nothing_abnormal", #没有异常
+        "nothing_abnormal", #  没有异常
     ] = Field(default=None,description="诊断信息")
 
     # # ===== 行为建议（关键设计）=====
