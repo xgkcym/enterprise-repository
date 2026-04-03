@@ -4,7 +4,7 @@ from typing import Literal
 from anthropic import BaseModel
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import HumanMessage
-from pydantic import Field
+from pydantic import Field, ConfigDict
 
 from src.congfig.llm_config import LLMService
 from src.prompts.rag.generation_prompt import GEN_PROMPT
@@ -16,6 +16,8 @@ class GeneratorResult(BaseModel):
     """
         问答系统返回的数据
     """
+    # 你的字段定义
+    model_config = ConfigDict(extra="forbid")
     answer: str = Field(...,description="回答内容")
     citations: list[str] = Field(...,description="引用的node编号")
     is_sufficient:bool = Field(...,description="是否能够回答问题")

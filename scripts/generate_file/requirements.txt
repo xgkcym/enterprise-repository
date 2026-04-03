@@ -5,3 +5,8 @@ reportlab
 python-pptx
 tqdm
 pandas
+openai
+sentence-transformers
+scikit-learn
+tenacity
+python-dotenv

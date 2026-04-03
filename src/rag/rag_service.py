@@ -1,4 +1,4 @@
-import time
+﻿import time
 
 import os
 
@@ -138,9 +138,11 @@ class RAGService:
 
         if not search_queries:
             return RAGResult(
-                answer="暂无查询句子",
+                answer="暂无查询语句",
                 documents=[],
-                is_sufficient=False
+                is_sufficient=False,
+                success=True,
+                fail_reason="no_data"
             )
 
         # 2. 召回检索
@@ -183,7 +185,8 @@ class RAGService:
                     answer=response.answer,
                     documents=docs,
                     is_sufficient=True,
-                    citations=response.citations
+                    citations=response.citations,
+                    success=True
                 )
             else:
                 return RAGResult(
@@ -191,7 +194,8 @@ class RAGService:
                     fail_reason="verification_failed",
                     documents=docs,
                     is_sufficient=False,
-                    citations=response.citations
+                    citations=response.citations,
+                    success=True
                 )
         else:
             return RAGResult(
@@ -199,7 +203,8 @@ class RAGService:
                 documents=docs,
                 is_sufficient=False,
                 fail_reason=response.fail_reason,
-                citations=response.citations
+                citations=response.citations,
+                success=True
             )
 
 

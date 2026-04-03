@@ -1,6 +1,8 @@
+from langchain_core.messages import HumanMessage
 from langchain_deepseek import ChatDeepSeek
 from langchain_openai import ChatOpenAI
 from llama_index.llms.openai import OpenAI
+from pydantic import BaseModel
 
 from core.settings import settings
 
@@ -19,6 +21,19 @@ chatgpt_llm = ChatOpenAI(
     base_url=settings.openai_base_url,
 )
 
+class ChatGPTResult(BaseModel):
+    answer: str
+
 if __name__ == "__main__":
-    res = chatgpt_llm.invoke("请你一句话回答什么是机器学习")
-    print(res)
+    chatgpt_llm = chatgpt_llm.with_structured_output(ChatGPTResult,include_raw=True)
+    prompt = """
+        请你一句话回答什么是机器学习
+        
+        【输出（必须是JSON）】
+        {
+          "answer": "..."
+        }
+    
+    """
+    res = chatgpt_llm.invoke([HumanMessage(content=prompt)])
+    print(res['parsed'])

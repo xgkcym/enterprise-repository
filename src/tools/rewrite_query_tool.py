@@ -1,15 +1,14 @@
 from typing import List, Dict, Literal, Optional
 
-from anthropic import BaseModel
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import HumanMessage
 from pydantic import Field
 from src.congfig.llm_config import LLMService
 from src.prompts.agent.rewrite_prompt import REWRITE_PROMPT
-from src.types.base_type import BaseToolResult
+from src.types.base_type import BaseNodeResult
 
 
-class RewriteResult(BaseToolResult):
+class RewriteResult(BaseNodeResult):
     """
        Query优化助手返回的数据
     """
@@ -33,11 +32,11 @@ def rewrite_query_tool(llm:BaseChatModel,query:str,chat_history=None,user_profil
             schema=RewriteResult
         )
 
-        response.is_sufficient = response.answer == query
+        response.success = True
         return response
     except Exception:
         return RewriteResult(
             answer=query,
-            is_sufficient=False,
+            success=False,
         )
 

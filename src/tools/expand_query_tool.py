@@ -6,10 +6,10 @@ from pydantic import BaseModel, Field
 
 from src.congfig.llm_config import LLMService
 from src.prompts.agent.expand import EXPAND_PROMPT
-from src.types.base_type import BaseToolResult
+from src.types.base_type import BaseNodeResult
 
 
-class ExpandResult(BaseToolResult):
+class ExpandResult(BaseNodeResult):
     """
        查询扩展助手返回的数据
     """
@@ -24,10 +24,10 @@ def expand_query_tool(llm:BaseChatModel, query: str, chat_history=None):
             messages=[HumanMessage(content=prompt)],
             schema=ExpandResult
         )
-        response.is_sufficient = True
+        response.success = True
         return response
     except Exception:
         return ExpandResult(
-            is_sufficient=False,
+            success=False,
             answer=[],
         )

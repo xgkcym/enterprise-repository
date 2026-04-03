@@ -17,7 +17,7 @@ def agent_node(state: State):
 
     # ===== 1️⃣ 构建上下文 =====
     last_tool = next((event for event in state.action_history[::-1] if event.kind =="tool"),None)
-    last_event = state.action_history[-1]
+    last_event = state.action_history[-1] if state.action_history else None
     if last_event and last_event.kind == "tool" and last_event.output.is_sufficient:
         if verify_task_complete(state,last_tool.output.answer):
             return {

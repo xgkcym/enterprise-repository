@@ -1,3 +1,6 @@
+import time
+
+from src.nodes.helpers import create_event, finalize_event, get_next_attempt
 from src.models.llm import deepseek_llm
 from src.tools.rewrite_query_tool import rewrite_query_tool, RewriteResult
 from src.types.agent_state import State
@@ -5,24 +8,22 @@ from src.types.event_type import ReasoningEvent
 
 
 def rewrite_query_node(state:State):
+    start_time = time.time()
     query = state.working_query or state.query
-    reasoning_event = ReasoningEvent(
+    reasoning_event = create_event(
+        ReasoningEvent,
         name="rewrite_query",
-        input={"query": query},
+        input_data={"query": query},
     )
     if len(query) > 10:
         rewritten:RewriteResult = rewrite_query_tool(deepseek_llm,state.working_query,state.chat_history)
     else:
         rewritten = RewriteResult(
             answer=query,
+            success=True,
         )
-    last_event = next((event for event in state.action_history[::-1] if event.name == "rewrite_query"),None)
-    if  last_event:
-        reasoning_event.attempt = last_event.attempt + 1
-    else:
-        reasoning_event.attempt = 1
-    reasoning_event.input = {"query": query}
-    reasoning_event.output = rewritten
+    reasoning_event.attempt = get_next_attempt(state.action_history, "rewrite_query")
+    reasoning_event = finalize_event(reasoning_event, rewritten, start_time)
     return {
         "working_query":rewritten.answer,
         "rewrite_query":rewritten.answer,
