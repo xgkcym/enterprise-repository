@@ -34,12 +34,12 @@ class BaseResult(BaseModel):
 
 class BaseNodeResult(BaseResult):
     """给 reasoning node 用"""
-
+    name: Optional[str] = Field(default=None, description="名称")
     answer: Optional[Any] = Field(default=None, description="回答")
 
 
 class BaseToolResult(BaseResult):
-    tool_name: Optional[str] = Field(default=None, description="工具名称")
+    name: Optional[str] = Field(default=None, description="工具名称")
     answer: Optional[Any] = Field(default=None, description="回答")
     is_sufficient: bool = Field(default=False, description="是否足够回答")
     reason: Optional[str] = Field(default=None, description="诊断理由")

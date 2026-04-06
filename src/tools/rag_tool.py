@@ -191,7 +191,7 @@ def execute_multi_pass_rag(query: RagContext, user_context: dict) -> RAGResult:
     if not successful_results:
         return RAGResult(
             success=False,
-            tool_name="rag",
+            name="rag",
             answer="子问题执行后仍未获得足够证据。",
             evidence_summary="子问题执行后仍未获得足够证据。",
             is_sufficient=False,
@@ -207,7 +207,7 @@ def execute_multi_pass_rag(query: RagContext, user_context: dict) -> RAGResult:
 
     final_result = RAGResult(
         success=True,
-        tool_name="rag",
+        name="rag",
         answer=aggregate_result.evidence_summary or "",
         evidence_summary=aggregate_result.evidence_summary or "",
         documents=merge_documents(successful_results),
@@ -235,7 +235,7 @@ def rag_tool(query: RagContext, user_context: dict, previous_result: RAGResult |
         if should_run_multi_pass(query)
         else rag_service.query(query, user_context, previous_result=previous_result)
     )
-    result.tool_name = "rag"
+    result.name = "rag"
 
     if result.confidence is None:
         result.confidence = compute_confidence(result)

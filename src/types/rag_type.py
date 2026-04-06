@@ -42,6 +42,7 @@ class SubQueryResult(BaseModel):
 
 
 class RAGResult(BaseToolResult):
+    name:str = "rag"
     documents: List[DocumentInfo] = Field(default_factory=list, description="检索到的文档")
     citations: List[str] = Field(default_factory=list, description="证据引用来源")
     evidence_summary: Optional[str] = Field(default="", description="证据摘要")

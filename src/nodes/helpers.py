@@ -29,7 +29,7 @@ def get_next_attempt(action_history: list[BaseEvent], event_name: str) -> int:
     return 1
 
 
-def finalize_event(event: TEvent, result: Optional[BaseResult], start_time: float) -> TEvent:
+def finalize_event(event: TEvent, result: Optional[BaseResult ], start_time: float) -> TEvent:
     event.output = result
     event.status = "success" if result and result.success else "failed"
     event.error = result.error_detail if result else None

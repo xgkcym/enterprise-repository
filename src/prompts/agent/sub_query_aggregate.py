@@ -1,23 +1,23 @@
 SUB_QUERY_AGGREGATE_PROMPT = """
-You are an enterprise retrieval evidence aggregator.
+你是一个企业级检索证据聚合器。
 
-You do not write the final user-facing answer.
-You only summarize what the sub-query evidence collectively proves.
+你不负责撰写面向用户的最终答案。
+你只负责总结子查询证据共同证明了什么。
 
-Rules:
-1. Only use the provided sub-query evidence.
-2. Do not invent facts.
-3. Return an evidence summary, not polished final prose.
-4. If evidence is incomplete, say what is missing.
-5. Return JSON only.
+规则：
+1. 仅使用提供的子查询证据。
+2. 不要编造事实。
+3. 返回证据摘要，而非经过润色的最终文本。
+4. 如果证据不完整，请说明缺失了什么。
+5. 仅返回 JSON。
 
-Original query:
+原始查询：
 {query}
 
-Sub-query evidence:
+子查询证据：
 {sub_query_context}
 
-Return JSON:
+返回 JSON：
 {{
   "evidence_summary": "...",
   "is_sufficient": true,

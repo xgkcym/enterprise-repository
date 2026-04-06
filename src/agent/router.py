@@ -8,6 +8,8 @@ reasoning_route = [
 
 tool_route = [
     'rag',
+    'web_search',
+    'db_search',
 ]
 
 route_list = reasoning_route + tool_route + ["finalize", "abort", "finish"]

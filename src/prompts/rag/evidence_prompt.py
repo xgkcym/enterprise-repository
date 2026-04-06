@@ -13,6 +13,7 @@ EVIDENCE_PROMPT = """
 6. 如果 is_sufficient 为 false，则 fail_reason 必须是以下值之一：
    low_recall / bad_ranking / ambiguous_query / no_data / insufficient_context
 7. 如果 is_sufficient 为 true，则 fail_reason 应为 null。
+8. citations 必须引用上下文中出现的真实 node_id，不允许输出 node_id1 这类占位符。
 
 用户问题：
 {query}
@@ -23,7 +24,7 @@ EVIDENCE_PROMPT = """
 返回 JSON：
 {{
   "evidence_summary": "...",
-  "citations": ["node_id1", "node_id2"],
+  "citations": ["上下文中的真实node_id1", "上下文中的真实node_id2"],
   "is_sufficient": true,
   "fail_reason": null
 }}

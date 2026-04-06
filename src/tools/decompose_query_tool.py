@@ -10,7 +10,7 @@ from src.types.base_type import BaseNodeResult
 
 
 class DecomposeResult(BaseNodeResult):
-    tool_name: Optional[str] = Field(default="decompose_query", description="工具名称")
+    name: Optional[str] = Field(default="decompose_query", description="工具名称")
     answer: List[str] = Field(default_factory=list, description="拆解后的子问题")
 
 
@@ -38,7 +38,7 @@ def decompose_query_tool(llm: BaseChatModel, query: str, chat_history=None) -> D
             schema=DecomposeResult,
         )
         response.success = True
-        response.tool_name = "decompose_query"
+        response.name = "decompose_query"
         response.answer = _normalize_sub_queries(response.answer)
         response.message = "decompose query success"
         response.diagnostics = list(response.diagnostics or []) + ["decompose_query_completed"]
@@ -47,7 +47,7 @@ def decompose_query_tool(llm: BaseChatModel, query: str, chat_history=None) -> D
         return DecomposeResult(
             answer=[],
             success=False,
-            tool_name="decompose_query",
+            name="decompose_query",
             message="decompose query failed",
             error_detail=str(exc),
             diagnostics=["decompose_query_failed"],

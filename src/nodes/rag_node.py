@@ -162,7 +162,7 @@ def rag_node(state: State):
     if access_denied:
         tool_result = RAGResult(
             success=False,
-            tool_name="rag",
+            name="rag",
             answer="当前用户没有可用的数据访问范围，无法执行检索。",
             is_sufficient=False,
             fail_reason="permission_denied",

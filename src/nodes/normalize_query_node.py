@@ -9,7 +9,7 @@ from src.types.event_type import ReasoningEvent
 
 
 class NormalizeQueryResult(BaseNodeResult):
-    pass
+    name:str = "normalize_query"
 
 def normalize_query_node(state:State):
     start_time = time.time()

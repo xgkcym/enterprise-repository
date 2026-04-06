@@ -5,6 +5,7 @@ FINALIZE_PROMPT = """
 1. 用户原始查询
 2. 检索证据摘要
 3. 可选的子查询证据摘要
+4. 上游已经确认可用的真实引用 ID 列表
 
 你的任务：
 1. 生成面向用户的最终答案
@@ -12,6 +13,7 @@ FINALIZE_PROMPT = """
 3. 如果证据不完整，应保守回答并明确说明局限性
 4. 保持专业、清晰的语气
 5. 仅返回 JSON
+6. citations 只能从“可用引用”里选择，不能自己编造占位符
 
 用户查询：
 {query}
@@ -22,10 +24,13 @@ FINALIZE_PROMPT = """
 子查询证据：
 {sub_query_context}
 
+可用引用：
+{available_citations}
+
 返回 JSON：
 {{
   "answer": "...",
-  "citations": ["node_id1", "node_id2"],
+  "citations": ["真实引用ID1", "真实引用ID2"],
   "reason": "...",
   "fail_reason": null
 }}

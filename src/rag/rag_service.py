@@ -87,7 +87,7 @@ class RAGService:
             is_sufficient=is_sufficient,
             fail_reason=fail_reason,
             success=success,
-            tool_name="rag",
+            name="rag",
             retrieval_queries=retrieval_queries or [],
             retrieval_candidate_node_ids=retrieval_candidate_node_ids or [],
             rerank_node_ids=rerank_node_ids or [],

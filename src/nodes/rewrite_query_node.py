@@ -21,7 +21,7 @@ def rewrite_query_node(state:State):
         rewritten = RewriteResult(
             answer=query,
             success=True,
-            tool_name="rewrite_query",
+            name="rewrite_query",
             message="重写为短查询跳过的查询",
             diagnostics=["rewrite_query_skipped_short_query"],
         )

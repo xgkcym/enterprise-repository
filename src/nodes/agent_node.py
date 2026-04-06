@@ -1,6 +1,12 @@
 from langchain_core.messages import HumanMessage
 
-from src.agent.policy import decide_initial_action, get_allowed_actions, guard_input, should_force_finish
+from src.agent.policy import (
+    _looks_like_structured_db_query,
+    decide_initial_action,
+    get_allowed_actions,
+    guard_input,
+    should_force_finish,
+)
 from src.congfig.llm_config import LLMService
 from src.models.llm import deepseek_llm
 from src.prompts.agent.agent import AGENT_PROMPT
@@ -157,6 +163,13 @@ def agent_node(state: State):
     # 如果没有推理历史，进行初始决策
     reasoning_history = [event for event in state.action_history if event.kind == "reasoning"]
     if not reasoning_history:
+        if _looks_like_structured_db_query(state.working_query or state.normalized_query or state.query or ""):
+            return {
+                "action": "db_search",
+                "reason": "initial_structured_db_query",
+                "diagnostics": state.diagnostics + ["agent:initial=db_search"],
+            }
+
         initial_decision = decide_initial_action(state)
         if initial_decision.next_action == "clarify_question":
             return _build_finish_response(
@@ -281,7 +294,7 @@ def build_agent_context(state: State, last_tool_num: int = 3) -> str:
 
     event_list = [event for event in state.action_history if event.kind == "tool"][-last_tool_num:]
     for index, event in enumerate(event_list, start=1):
-        if event.name == "rag":
+        if event.name in {"rag", "web_search", "db_search"}:
             result: RAGResult = event.output
             quality_hint = {"has_data": len(result.documents) > 0, "confidence": result.confidence}
             answer = result.evidence_summary or result.answer

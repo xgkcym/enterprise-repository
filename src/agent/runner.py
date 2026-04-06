@@ -105,22 +105,21 @@ def print_run_report(state: State) -> None:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Run the Agentic RAG graph for local validation.")
-    parser.add_argument(
-        "query",
-        nargs="?",
-        default="根据多个会议记录，不同部门对新能源行业景气度的看法有哪些共同点和差异？",
-        help="User query",
-    )
-    parser.add_argument("--user-id", default="", help="User ID")
-    parser.add_argument("--session-id", default="", help="Session ID")
-    parser.add_argument("--max-steps", type=int, default=6, help="Maximum agent steps")
-    args = parser.parse_args()
+    # parser = argparse.ArgumentParser(description="Run the Agentic RAG graph for local validation.")
+    # parser.add_argument(
+    #     "query",
+    #     default="根据多个会议记录，不同部门对新能源行业景气度的看法有哪些共同点和差异？",
+    #     help="User query",
+    # )
+    # parser.add_argument("--user-id", default="", help="User ID")
+    # parser.add_argument("--session-id", default="", help="Session ID")
+    # parser.add_argument("--max-steps", type=int, default=6, help="Maximum agent steps")
+    # args = parser.parse_args()
 
     final_state = run_agent(
-        args.query,
-        user_id=args.user_id,
-        session_id=args.session_id,
-        max_steps=args.max_steps,
+        query="python怎么学？",
+        # user_id=args.user_id,
+        # session_id=args.session_id,
+        # max_steps=args.max_steps,
     )
     print_run_report(final_state)

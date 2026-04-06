@@ -10,7 +10,7 @@ from src.types.base_type import BaseNodeResult
 
 
 class ExpandResult(BaseNodeResult):
-    tool_name: Optional[str] = Field(default="expand_query", description="工具名称")
+    name: Optional[str] = Field(default="expand_query", description="工具名称")
     answer: List[str] = Field(default_factory=list, description="扩展查询")
 
 
@@ -41,7 +41,7 @@ def expand_query_tool(llm: BaseChatModel, query: str, chat_history=None) -> Expa
             schema=ExpandResult,
         )
         response.success = True
-        response.tool_name = "expand_query"
+        response.name = "expand_query"
         response.answer = _normalize_expand_queries(response.answer, query)
         response.message = "expand query success"
         response.diagnostics = list(response.diagnostics or []) + ["expand_query_completed"]
@@ -50,7 +50,7 @@ def expand_query_tool(llm: BaseChatModel, query: str, chat_history=None) -> Expa
         return ExpandResult(
             success=False,
             answer=_normalize_expand_queries([], query),
-            tool_name="expand_query",
+            name="expand_query",
             message="expand query failed",
             error_detail=str(exc),
             diagnostics=["expand_query_failed"],
