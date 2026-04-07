@@ -18,6 +18,8 @@ def db_search_node(state: State):
     Returns:
         返回更新后的状态补丁，包含搜索结果等信息
     """
+    effective_query = state.working_query or state.resolved_query or state.query or ""
+
     # 记录操作开始时间
     start_time = time.time()
     # 创建数据库搜索工具事件
@@ -27,7 +29,7 @@ def db_search_node(state: State):
 
     # 构建数据库搜索上下文
     db_context = DBSearchContext(
-        query=state.query,  # 原始查询
+        query=effective_query,
         rewritten_query=state.rewrite_query,  # 重写后的查询
         user_id=profile.get("user_id"),  # 用户ID
         role_id=profile.get("role_id"),  # 角色ID

@@ -64,6 +64,10 @@ class Settings(BaseSettings):
     context_max_len:int = Field(default=os.getenv("CONTEXT_MAX_LEN"))
     max_expand:int = Field(default=os.getenv("MAX_EXPAND"))
     agent_max_steps:int = Field(default=int(os.getenv("AGENT_MAX_STEPS", 10)))
+    agent_chat_history_limit:int = Field(default=int(os.getenv("AGENT_CHAT_HISTORY_LIMIT", 8)))
+    agent_output_level:Literal["concise","standard","detailed"] = Field(
+        default=os.getenv("AGENT_OUTPUT_LEVEL", "standard")
+    )
     update_doc_time:int = Field(default=os.getenv("UPDATE_DOC_TIME"))
     is_need_doc:bool = Field(default=False)
     await_upload_file_num:int = Field(default=0)

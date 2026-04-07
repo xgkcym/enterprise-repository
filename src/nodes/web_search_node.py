@@ -18,6 +18,8 @@ def web_search_node(state: State):
     Returns:
         dict: 包含更新后的工具事件、RAG结果等信息的状态补丁
     """
+    effective_query = state.working_query or state.resolved_query or state.query or ""
+
     # 记录开始时间用于计算执行耗时
     start_time = time.time()
     # 创建工具事件对象
@@ -25,7 +27,7 @@ def web_search_node(state: State):
 
     # 构建网络搜索上下文
     web_context = WebSearchContext(
-        query=state.query,  # 原始查询
+        query=effective_query,
         rewritten_query=state.rewrite_query,  # 重写后的查询
         expand_query=state.expand_query,  # 扩展后的查询
         decompose_query=state.decompose_query,  # 分解后的查询

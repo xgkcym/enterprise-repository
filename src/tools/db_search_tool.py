@@ -13,7 +13,7 @@ from src.types.db_search_type import DBQueryKind, DBSearchContext
 from src.types.rag_type import DocumentInfo, RAGResult
 
 
-def _normalize_query_text(*parts: str) -> str:
+def _resolved_query_text(*parts: str) -> str:
     return " ".join(part.strip() for part in parts if part and part.strip()).lower()
 
 
@@ -23,7 +23,7 @@ def _looks_like_count_query(text: str) -> bool:
 
 
 def _infer_db_query_kind(context: DBSearchContext) -> DBQueryKind:
-    text = _normalize_query_text(context.query or "", context.rewritten_query or "")
+    text = _resolved_query_text(context.query or "", context.rewritten_query or "")
 
     if ("角色" in text or "role" in text) and ("部门" in text or "权限" in text or "scope" in text):
         return "role_department_scope"

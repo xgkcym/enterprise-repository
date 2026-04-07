@@ -41,7 +41,7 @@ const parseSseChunk = (block) => {
   };
 };
 
-export const stream_agent_chat = async ({ query, sessionId, onEvent }) => {
+export const stream_agent_chat = async ({ query, sessionId, outputLevel, onEvent }) => {
   const response = await fetch(`${baseURL}/agent/chat/stream`, {
     method: "POST",
     headers: {
@@ -51,6 +51,7 @@ export const stream_agent_chat = async ({ query, sessionId, onEvent }) => {
     body: JSON.stringify({
       query,
       session_id: sessionId || null,
+      output_level: outputLevel || "standard",
     }),
   });
 

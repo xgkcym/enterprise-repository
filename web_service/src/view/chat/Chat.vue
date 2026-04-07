@@ -14,8 +14,10 @@
         :user-info="userInfo"
         :is-streaming="isStreaming"
         :session-title="currentSessionTitle"
+        :output-level="outputLevel"
         @login-success="handleLoginSuccess"
         @logout="handleLogout"
+        @update:output-level="handleOutputLevelChange"
         @send-message="handleSendMessage"
       />
     </div>
@@ -34,6 +36,7 @@ const currentSessionId = ref("");
 const messages = ref([]);
 const isStreaming = ref(false);
 const isLogin = ref(!!localStorage.getItem("token"));
+const outputLevel = ref(localStorage.getItem("agentOutputLevel") || "standard");
 const userInfo = ref(
   localStorage.getItem("userInfo")
     ? JSON.parse(localStorage.getItem("userInfo"))
@@ -131,6 +134,11 @@ const handleLogout = () => {
   handleNewChat();
 };
 
+const handleOutputLevelChange = (value) => {
+  outputLevel.value = value || "standard";
+  localStorage.setItem("agentOutputLevel", outputLevel.value);
+};
+
 const ensureAssistantMessage = (messageId) => {
   const index = messages.value.findIndex((item) => item.message_id === messageId);
   if (index >= 0) {
@@ -163,6 +171,7 @@ const handleSendMessage = async (query) => {
     await stream_agent_chat({
       query: query.trim(),
       sessionId: currentSessionId.value || undefined,
+      outputLevel: outputLevel.value,
       onEvent: ({ event, data }) => {
         if (event === "session_created") {
           upsertSession(data);

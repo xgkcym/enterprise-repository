@@ -1,4 +1,4 @@
-def normalize_query(query: str) -> str:
+def resolved_query(query: str) -> str:
     """清洗数据，规范化数据"""
     if not query:
         return ""

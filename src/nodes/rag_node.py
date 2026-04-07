@@ -132,6 +132,8 @@ def rag_node(state: State):
     Returns:
         返回更新后的状态补丁，包含检索结果和上下文
     """
+    effective_query = state.working_query or state.resolved_query or state.query or ""
+
     # 记录开始时间用于性能统计
     start_time = time.time()
 
@@ -147,7 +149,7 @@ def rag_node(state: State):
         new_input = RagContext()
 
     # 填充查询相关字段
-    new_input.query = state.query
+    new_input.query = effective_query
     new_input.rewritten_query = state.rewrite_query
     new_input.expand_query = state.expand_query
     new_input.decompose_query = state.decompose_query

@@ -1,4 +1,5 @@
-from typing import Any
+import asyncio
+from typing import Any, Literal
 
 from fastapi import Depends
 from pydantic import BaseModel, Field
@@ -11,12 +12,17 @@ from service.dependencies.auth import get_current_active_user
 from service.models.role_department import RoleDepartmentModel
 from service.models.users import UserModel
 from service.router.agent.index import agent_router
+from service.utils.chat_store import chat_store
 from src.agent.runner import build_run_report, run_agent
 
 
 class AgentQueryRequest(BaseModel):
     query: str = Field(..., description="User query")
     session_id: str = Field(..., description="Chat session id")
+    output_level: Literal["concise", "standard", "detailed"] | None = Field(
+        default=None,
+        description="Answer verbosity: concise|standard|detailed",
+    )
 
 
 def build_user_profile(current_user: UserModel, allowed_department_ids: list[int]) -> dict[str, Any]:
@@ -36,20 +42,48 @@ async def query_agent(
     current_user: UserModel = Depends(get_current_active_user),
     session: AsyncSession = Depends(get_session),
 ):
+    """处理代理查询请求
+
+    Args:
+        payload: 包含查询参数、会话ID和输出级别的请求体
+        current_user: 通过认证的当前用户对象
+        session: 异步数据库会话
+
+    Returns:
+        dict: 包含最终状态和运行报告的字典
+    """
+    # 查询当前用户角色对应的部门ID列表
     role_dept_result = await session.execute(
         select(RoleDepartmentModel.dept_id).where(RoleDepartmentModel.role_id == current_user.role_id)
     )
     allowed_department_ids = role_dept_result.scalars().all()
 
+    # 构建用户档案信息
     user_profile = build_user_profile(current_user, allowed_department_ids)
+
+    # 初始化聊天历史记录
+    chat_history: list[str] = []
+    if payload.session_id:
+        # 异步获取指定会话的最近聊天历史
+        chat_history = await asyncio.to_thread(
+            chat_store.get_recent_history,
+            session_id=payload.session_id,
+            user_id=int(current_user.id),
+            limit=settings.agent_chat_history_limit,
+        )
+
+    # 运行代理处理查询
     final_state = run_agent(
         payload.query,
         user_id=str(current_user.id or ""),
         session_id=payload.session_id,
+        chat_history=chat_history,
         user_profile=user_profile,
         max_steps=settings.agent_max_steps,
+        output_level=payload.output_level,
     )
 
+    # 返回处理结果
     return {
         "status": final_state.status,
         "data": build_run_report(final_state),

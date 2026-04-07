@@ -15,7 +15,7 @@ tool_route = [
 route_list = reasoning_route + tool_route + ["finalize", "abort", "finish"]
 
 route_map = {
-
+    "direct_answer": "finalize",
 }
 
 for route in route_list:

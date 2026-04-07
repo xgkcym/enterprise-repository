@@ -32,7 +32,69 @@ FUTURE_TOOL_ACTIONS = [
 ]
 
 TERMINAL_ACTIONS = ["finish", "abort"]
-INITIAL_ACTIONS = {"rag", "db_search", "web_search", "rewrite_query", "decompose_query", "clarify_question"}
+INITIAL_ACTIONS = {
+    "rag",
+    "db_search",
+    "web_search",
+    "rewrite_query",
+    "decompose_query",
+    "clarify_question",
+    "direct_answer",
+}
+
+
+def _should_direct_answer(text: str) -> bool:
+    normalized = (text or "").strip().lower()
+    if not normalized:
+        return False
+
+    direct_markers = [
+        "是什么",
+        "什么意思",
+        "解释一下",
+        "介绍一下",
+        "怎么理解",
+        "如何理解",
+        "帮我润色",
+        "帮我改写",
+        "帮我翻译",
+        "帮我总结这句话",
+        "what is",
+        "explain",
+        "introduce",
+        "translate",
+        "rewrite",
+        "polish",
+        "summarize this",
+    ]
+    enterprise_markers = [
+        "文档",
+        "文件",
+        "资料",
+        "制度",
+        "部门",
+        "角色",
+        "权限",
+        "知识库",
+        "上传",
+        "公司",
+        "内部",
+        "report",
+        "document",
+        "knowledge base",
+        "department",
+        "permission",
+        "uploaded",
+        "internal",
+    ]
+
+    if _looks_like_external_query(normalized) or _looks_like_structured_db_query(normalized):
+        return False
+    if any(marker in normalized for marker in enterprise_markers):
+        return False
+    if any(marker in normalized for marker in direct_markers):
+        return True
+    return len(normalized) <= 18 and not is_complex_query(normalized)
 
 
 def _looks_like_external_query(text: str) -> bool:
@@ -300,8 +362,8 @@ def decide_initial_action(state: State) -> InitialActionDecision:
     Returns:
         InitialActionDecision: 包含下一步动作、原因和澄清问题(如果需要)的决策对象
     """
-    # 获取当前工作查询(优先使用working_query，其次normalized_query，最后原始query)
-    query = (state.working_query or state.normalized_query or state.query or "").strip()
+    # 获取当前工作查询(优先使用working_query，其次resolved_query，最后原始query)
+    query = (state.working_query or state.resolved_query or state.query or "").strip()
 
     # 空查询处理：直接返回澄清问题的决策
     if not query:
@@ -312,6 +374,12 @@ def decide_initial_action(state: State) -> InitialActionDecision:
         )
 
     # 准备LLM提示词：拼接最近5条聊天记录(如果有)
+    if _should_direct_answer(query):
+        return InitialActionDecision(
+            next_action="direct_answer",
+            reason="direct_llm_answer_preferred",
+        )
+
     chat_history = "\n".join(state.chat_history[-5:]) if state.chat_history else ""
     prompt = INITIAL_ACTION_PROMPT.format(query=query, chat_history=chat_history)
 
@@ -373,10 +441,10 @@ def get_allowed_actions(state: State) -> list[str]:
     Returns:
         list[str]: 允许执行的动作名称列表
     """
-    current_query = state.working_query or state.normalized_query or state.query or ""
+    current_query = state.working_query or state.resolved_query or state.query or ""
 
     # 获取所有历史中的推理类型动作
-    reasoning_history = [event for event in state.action_history if event.kind == "reasoning" and event.name != "normalize_query"]
+    reasoning_history = [event for event in state.action_history if event.kind == "reasoning" and event.name != "resolved_query"]
     if not reasoning_history:
         # 如果没有推理历史，则决定初始动作
         initial_actions = [decide_initial_action(state).next_action]
@@ -462,8 +530,8 @@ def should_force_finish(state: State) -> tuple[bool, str | None]:
             - 第一个元素表示是否应该强制终止
             - 第二个元素是终止原因描述字符串，如果不需要终止则为None
     """
-    # 获取最近的非normalize_query事件和事件名称列表
-    recent_events = [event for event in state.action_history if event.name != "normalize_query"]
+    # 获取最近的非resolved_query事件和事件名称列表
+    recent_events = [event for event in state.action_history if event.name != "resolved_query"]
     recent_names = [event.name for event in recent_events]
     # 筛选出所有的RAG工具事件
     rag_events = [event for event in recent_events if event.kind == "tool" and event.name == "rag"]

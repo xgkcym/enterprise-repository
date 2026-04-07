@@ -112,7 +112,22 @@
         </div>
 
         <div class="flex justify-between items-center">
-          <div class="text-xs text-gray-400">{{ isStreaming ? "Agent 正在处理中..." : "支持流式回答与历史会话切换" }}</div>
+          <div class="flex items-center gap-3">
+            <div class="flex items-center gap-2">
+              <label class="text-xs text-gray-500">输出等级</label>
+              <select
+                class="px-2 py-1 text-sm border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-primary/40"
+                :value="outputLevel"
+                :disabled="isStreaming"
+                @change="handleOutputLevelChange"
+              >
+                <option v-for="option in outputLevelOptions" :key="option.value" :value="option.value">
+                  {{ option.label }}
+                </option>
+              </select>
+            </div>
+            <div class="text-xs text-gray-400">{{ isStreaming ? "Agent 正在处理中..." : "支持流式回答与历史会话切换" }}</div>
+          </div>
           <button
             class="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
             :disabled="!isLogin || isStreaming || !inputMessage.trim()"
@@ -181,9 +196,13 @@ const props = defineProps({
     type: String,
     default: "智能检索对话",
   },
+  outputLevel: {
+    type: String,
+    default: "standard",
+  },
 });
 
-const emit = defineEmits(["login-success", "logout", "send-message"]);
+const emit = defineEmits(["login-success", "logout", "send-message", "update:output-level"]);
 
 const inputMessage = ref("");
 const showLoginModal = ref(false);
@@ -193,6 +212,11 @@ const loginForm = ref({
   username: "EdenXie",
   password: "123456",
 });
+const outputLevelOptions = [
+  { label: "简洁", value: "concise" },
+  { label: "标准", value: "standard" },
+  { label: "详细", value: "detailed" },
+];
 
 const scrollToBottom = async () => {
   await nextTick();
@@ -202,6 +226,10 @@ const scrollToBottom = async () => {
 };
 
 const isUserMessage = (message) => message.role === "user";
+
+const handleOutputLevelChange = (event) => {
+  emit("update:output-level", event.target.value);
+};
 
 const emitSend = () => {
   const query = inputMessage.value.trim();

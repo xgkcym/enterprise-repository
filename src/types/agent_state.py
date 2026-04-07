@@ -18,8 +18,9 @@ class State(BaseModel):
     run_id: Optional[str] = Field(default="", description="运行ID")
     user_id: Optional[str] = Field(default="", description="用户ID")
     session_id: Optional[str] = Field(default="", description="会话ID")
+    output_level: Literal["concise", "standard", "detailed"] = Field(default="standard")
 
-    normalized_query: Optional[str] = Field(default="", description="标准化后的查询")
+    resolved_query: Optional[str] = Field(default="", description="解析后的查询")
     working_query: Optional[str] = Field(default="", description="工作查询")
     rewrite_query: Optional[str] = Field(default="", description="重写后的查询")
     expand_query: List[str] = Field(default_factory=list, description="扩展后的查询列表")
@@ -28,7 +29,7 @@ class State(BaseModel):
     answer: Optional[str] = Field(default="", description="最终答案")
     citations: List[str] = Field(default_factory=list, description="最终引用来源")
     reason: Optional[str] = Field(default="", description="原因")
-    action: Optional[str] = Field(default="", description="下一个动作")
+    action: Optional[str] = Field(default="", description="下一步动作")
 
     chat_history: List[str] = Field(default_factory=list, description="对话历史")
     user_profile: Optional[Dict[str, Any]] = Field(default=None, description="用户画像")

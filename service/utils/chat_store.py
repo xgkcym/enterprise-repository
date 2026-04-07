@@ -147,6 +147,53 @@ class ChatStore:
         )
         return [self._serialize_message(doc) for doc in docs]
 
+    def get_recent_history(
+        self,
+        *,
+        session_id: str,
+        user_id: int,
+        limit: int,
+    ) -> list[str]:
+        """获取指定会话中最近的聊天历史记录
+
+        参数:
+            session_id: 会话ID
+            user_id: 用户ID
+            limit: 要获取的历史记录条数限制
+
+        返回:
+            按时间升序排列的聊天历史记录列表，每条记录格式为"角色: 内容"
+            如果limit<=0则返回空列表
+        """
+        # 处理无效的limit参数
+        if limit <= 0:
+            return []
+
+        # 从数据库查询最近的limit条消息，按创建时间降序排列
+        docs = list(
+            self.messages.find(
+                {"session_id": session_id, "user_id": user_id},
+                sort=[("created_at", DESCENDING)],
+                limit=limit,
+            )
+        )
+        # 将结果反转，使消息按时间升序排列
+        docs.reverse()
+
+        # 构建聊天历史记录
+        history: list[str] = []
+        for doc in docs:
+            # 处理角色字段，默认为"user"
+            role = (doc.get("role") or "").strip() or "user"
+            # 处理内容字段，去除前后空格
+            content = (doc.get("content") or "").strip()
+            # 跳过空内容的消息
+            if not content:
+                continue
+            # 将消息格式化为"角色: 内容"的形式
+            history.append(f"{role}: {content}")
+        return history
+
     def create_run(
         self,
         *,

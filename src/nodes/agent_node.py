@@ -23,12 +23,32 @@ DISALLOWED_INPUT_REASONS = {
 
 
 def _has_finalize_material(state: State) -> bool:
+    """检查当前状态是否包含可以生成最终响应的材料
+
+    判断依据包括：
+    - 最后一次RAG检索结果中是否有文档
+    - 最后一次RAG检索结果中是否有证据摘要或答案
+    - 是否有子查询结果
+
+    Args:
+        state: 包含当前agent状态的对象
+
+    Returns:
+        bool: 如果满足上述任一条件则返回True，否则返回False
+    """
+    # 获取最后一次RAG检索结果
     last_rag_result = state.last_rag_result
+
+    # 检查RAG结果中是否有文档或摘要/答案
     if last_rag_result:
+        # 如果有检索到的文档，返回True
         if last_rag_result.documents:
             return True
+        # 如果有证据摘要或答案，返回True
         if last_rag_result.evidence_summary or last_rag_result.answer:
             return True
+
+    # 检查是否有子查询结果
     return bool(state.sub_query_results)
 
 
@@ -101,7 +121,8 @@ def agent_node(state: State):
     last_event = state.action_history[-1] if state.action_history else None
 
     # 输入安全检查
-    input_guard = guard_input(state.query or state.working_query or "")
+    effective_query = state.working_query or state.resolved_query or state.query or ""
+    input_guard = guard_input(state.query or effective_query)
     if not input_guard.is_valid:
         return _build_finish_response(
             state,
@@ -163,7 +184,7 @@ def agent_node(state: State):
     # 如果没有推理历史，进行初始决策
     reasoning_history = [event for event in state.action_history if event.kind == "reasoning"]
     if not reasoning_history:
-        if _looks_like_structured_db_query(state.working_query or state.normalized_query or state.query or ""):
+        if _looks_like_structured_db_query(effective_query):
             return {
                 "action": "db_search",
                 "reason": "initial_structured_db_query",
@@ -181,6 +202,13 @@ def agent_node(state: State):
                 diagnostics=state.diagnostics + ["agent:clarify_question"],
             )
 
+        if initial_decision.next_action == "direct_answer":
+            return {
+                "action": "direct_answer",
+                "reason": initial_decision.reason or "direct_llm_answer_preferred",
+                "diagnostics": state.diagnostics + ["agent:initial=direct_answer"],
+            }
+
         return {
             "action": initial_decision.next_action,
             "reason": initial_decision.reason,
@@ -190,7 +218,8 @@ def agent_node(state: State):
     # 构建 LLM 提示并调用决策
     allowed_actions = get_allowed_actions(state)
     prompt = AGENT_PROMPT.format(
-        query=state.query,
+        raw_query=state.query,
+        query=effective_query,
         context=build_agent_context(state),
         query_evolution=build_query_evolution(state),
         allowed_actions=allowed_actions,
