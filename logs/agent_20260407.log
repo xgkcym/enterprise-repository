@@ -1,0 +1,42 @@
+2026-04-07 11:16:47,442 - agent - INFO - MongoDB数据库连接成功
+2026-04-07 11:17:39,350 - agent - INFO - [LLM调用成功] 耗时: 4.48s
+2026-04-07 11:17:39,351 - agent - INFO - [tokens]: {'completion_tokens': 136, 'prompt_tokens': 726, 'total_tokens': 862, 'completion_tokens_details': None, 'prompt_tokens_details': {'audio_tokens': None, 'cached_tokens': 0}, 'prompt_cache_hit_tokens': 0, 'prompt_cache_miss_tokens': 726}
+2026-04-07 11:17:43,554 - agent - INFO - [LLM调用成功] 耗时: 4.20s
+2026-04-07 11:17:43,555 - agent - INFO - [tokens]: {'completion_tokens': 140, 'prompt_tokens': 984, 'total_tokens': 1124, 'completion_tokens_details': None, 'prompt_tokens_details': {'audio_tokens': None, 'cached_tokens': 0}, 'prompt_cache_hit_tokens': 0, 'prompt_cache_miss_tokens': 984}
+2026-04-07 11:17:47,491 - agent - INFO - [LLM调用成功] 耗时: 3.06s
+2026-04-07 11:17:47,492 - agent - INFO - [tokens]: {'completion_tokens': 111, 'prompt_tokens': 918, 'total_tokens': 1029, 'completion_tokens_details': {'accepted_prediction_tokens': 0, 'audio_tokens': 0, 'reasoning_tokens': 0, 'rejected_prediction_tokens': 0, 'text_tokens': 0, 'image_tokens': 0, 'video_tokens': 0}, 'prompt_tokens_details': {'audio_tokens': 0, 'cached_tokens': 0, 'cache_creation_input_tokens': 0, 'cache_read_input_tokens': 0, 'text_tokens': 0, 'image_tokens': 0, 'video_tokens': 0}}
+2026-04-07 11:17:51,433 - agent - INFO - [LLM调用成功] 耗时: 3.94s
+2026-04-07 11:17:51,433 - agent - INFO - [tokens]: {'completion_tokens': 125, 'prompt_tokens': 726, 'total_tokens': 851, 'completion_tokens_details': None, 'prompt_tokens_details': {'audio_tokens': None, 'cached_tokens': 0}, 'prompt_cache_hit_tokens': 0, 'prompt_cache_miss_tokens': 726}
+2026-04-07 11:17:55,591 - agent - INFO - [LLM调用成功] 耗时: 4.15s
+2026-04-07 11:17:55,591 - agent - INFO - [tokens]: {'completion_tokens': 122, 'prompt_tokens': 1204, 'total_tokens': 1326, 'completion_tokens_details': None, 'prompt_tokens_details': {'audio_tokens': None, 'cached_tokens': 192}, 'prompt_cache_hit_tokens': 192, 'prompt_cache_miss_tokens': 1012}
+2026-04-07 11:17:59,014 - agent - INFO - [LLM调用成功] 耗时: 2.78s
+2026-04-07 11:17:59,014 - agent - INFO - [tokens]: {'completion_tokens': 126, 'prompt_tokens': 918, 'total_tokens': 1044, 'completion_tokens_details': {'accepted_prediction_tokens': 0, 'audio_tokens': 0, 'reasoning_tokens': 0, 'rejected_prediction_tokens': 0, 'text_tokens': 0, 'image_tokens': 0, 'video_tokens': 0}, 'prompt_tokens_details': {'audio_tokens': 0, 'cached_tokens': 0, 'cache_creation_input_tokens': 0, 'cache_read_input_tokens': 0, 'text_tokens': 0, 'image_tokens': 0, 'video_tokens': 0}}
+2026-04-07 11:18:02,999 - agent - INFO - [LLM调用成功] 耗时: 3.98s
+2026-04-07 11:18:02,999 - agent - INFO - [tokens]: {'completion_tokens': 119, 'prompt_tokens': 726, 'total_tokens': 845, 'completion_tokens_details': None, 'prompt_tokens_details': {'audio_tokens': None, 'cached_tokens': 704}, 'prompt_cache_hit_tokens': 704, 'prompt_cache_miss_tokens': 22}
+2026-04-07 11:18:06,655 - agent - INFO - [LLM调用成功] 耗时: 3.65s
+2026-04-07 11:18:06,655 - agent - INFO - [tokens]: {'completion_tokens': 104, 'prompt_tokens': 1431, 'total_tokens': 1535, 'completion_tokens_details': None, 'prompt_tokens_details': {'audio_tokens': None, 'cached_tokens': 768}, 'prompt_cache_hit_tokens': 768, 'prompt_cache_miss_tokens': 663}
+2026-04-07 11:18:09,573 - agent - INFO - [LLM调用成功] 耗时: 2.21s
+2026-04-07 11:18:09,573 - agent - INFO - [tokens]: {'completion_tokens': 130, 'prompt_tokens': 918, 'total_tokens': 1048, 'completion_tokens_details': {'accepted_prediction_tokens': 0, 'audio_tokens': 0, 'reasoning_tokens': 0, 'rejected_prediction_tokens': 0, 'text_tokens': 0, 'image_tokens': 0, 'video_tokens': 0}, 'prompt_tokens_details': {'audio_tokens': 0, 'cached_tokens': 0, 'cache_creation_input_tokens': 0, 'cache_read_input_tokens': 0, 'text_tokens': 0, 'image_tokens': 0, 'video_tokens': 0}}
+2026-04-07 11:18:12,368 - agent - INFO - [LLM调用成功] 耗时: 2.79s
+2026-04-07 11:18:12,368 - agent - INFO - [tokens]: {'completion_tokens': 178, 'prompt_tokens': 830, 'total_tokens': 1008, 'completion_tokens_details': {'accepted_prediction_tokens': 0, 'audio_tokens': 0, 'reasoning_tokens': 0, 'rejected_prediction_tokens': 0, 'text_tokens': 0, 'image_tokens': 0, 'video_tokens': 0}, 'prompt_tokens_details': {'audio_tokens': 0, 'cached_tokens': 0, 'cache_creation_input_tokens': 0, 'cache_read_input_tokens': 0, 'text_tokens': 0, 'image_tokens': 0, 'video_tokens': 0}}
+2026-04-07 11:19:20,523 - agent - INFO - [LLM调用成功] 耗时: 3.94s
+2026-04-07 11:19:20,523 - agent - INFO - [tokens]: {'completion_tokens': 124, 'prompt_tokens': 727, 'total_tokens': 851, 'completion_tokens_details': None, 'prompt_tokens_details': {'audio_tokens': None, 'cached_tokens': 576}, 'prompt_cache_hit_tokens': 576, 'prompt_cache_miss_tokens': 151}
+2026-04-07 11:19:23,939 - agent - INFO - [LLM调用成功] 耗时: 3.41s
+2026-04-07 11:19:23,939 - agent - INFO - [tokens]: {'completion_tokens': 102, 'prompt_tokens': 993, 'total_tokens': 1095, 'completion_tokens_details': None, 'prompt_tokens_details': {'audio_tokens': None, 'cached_tokens': 576}, 'prompt_cache_hit_tokens': 576, 'prompt_cache_miss_tokens': 417}
+2026-04-07 11:19:27,849 - agent - INFO - [LLM调用成功] 耗时: 3.91s
+2026-04-07 11:19:27,849 - agent - INFO - [tokens]: {'completion_tokens': 110, 'prompt_tokens': 1032, 'total_tokens': 1142, 'completion_tokens_details': None, 'prompt_tokens_details': {'audio_tokens': None, 'cached_tokens': 576}, 'prompt_cache_hit_tokens': 576, 'prompt_cache_miss_tokens': 456}
+2026-04-07 11:19:35,401 - agent - INFO - [LLM调用成功] 耗时: 2.86s
+2026-04-07 11:19:35,402 - agent - INFO - [tokens]: {'completion_tokens': 131, 'prompt_tokens': 1035, 'total_tokens': 1166, 'completion_tokens_details': {'accepted_prediction_tokens': 0, 'audio_tokens': 0, 'reasoning_tokens': 0, 'rejected_prediction_tokens': 0, 'text_tokens': 0, 'image_tokens': 0, 'video_tokens': 0}, 'prompt_tokens_details': {'audio_tokens': 0, 'cached_tokens': 0, 'cache_creation_input_tokens': 0, 'cache_read_input_tokens': 0, 'text_tokens': 0, 'image_tokens': 0, 'video_tokens': 0}}
+2026-04-07 11:19:40,601 - agent - INFO - [LLM调用成功] 耗时: 5.20s
+2026-04-07 11:19:40,601 - agent - INFO - [tokens]: {'completion_tokens': 103, 'prompt_tokens': 1286, 'total_tokens': 1389, 'completion_tokens_details': None, 'prompt_tokens_details': {'audio_tokens': None, 'cached_tokens': 576}, 'prompt_cache_hit_tokens': 576, 'prompt_cache_miss_tokens': 710}
+2026-04-07 11:19:43,652 - agent - INFO - [LLM调用成功] 耗时: 2.09s
+2026-04-07 11:19:43,652 - agent - INFO - [tokens]: {'completion_tokens': 53, 'prompt_tokens': 408, 'total_tokens': 461, 'completion_tokens_details': {'accepted_prediction_tokens': 0, 'audio_tokens': 0, 'reasoning_tokens': 0, 'rejected_prediction_tokens': 0, 'text_tokens': 0, 'image_tokens': 0, 'video_tokens': 0}, 'prompt_tokens_details': {'audio_tokens': 0, 'cached_tokens': 0, 'cache_creation_input_tokens': 0, 'cache_read_input_tokens': 0, 'text_tokens': 0, 'image_tokens': 0, 'video_tokens': 0}}
+2026-04-07 11:19:47,808 - agent - INFO - [LLM调用成功] 耗时: 4.15s
+2026-04-07 11:19:47,808 - agent - INFO - [tokens]: {'completion_tokens': 123, 'prompt_tokens': 1460, 'total_tokens': 1583, 'completion_tokens_details': None, 'prompt_tokens_details': {'audio_tokens': None, 'cached_tokens': 768}, 'prompt_cache_hit_tokens': 768, 'prompt_cache_miss_tokens': 692}
+2026-04-07 11:19:50,825 - agent - INFO - [LLM调用成功] 耗时: 3.01s
+2026-04-07 11:19:50,826 - agent - INFO - [tokens]: {'completion_tokens': 89, 'prompt_tokens': 639, 'total_tokens': 728, 'completion_tokens_details': None, 'prompt_tokens_details': {'audio_tokens': None, 'cached_tokens': 192}, 'prompt_cache_hit_tokens': 192, 'prompt_cache_miss_tokens': 447}
+2026-04-07 11:19:54,692 - agent - INFO - [LLM调用成功] 耗时: 3.86s
+2026-04-07 11:19:54,692 - agent - INFO - [tokens]: {'completion_tokens': 133, 'prompt_tokens': 1530, 'total_tokens': 1663, 'completion_tokens_details': None, 'prompt_tokens_details': {'audio_tokens': None, 'cached_tokens': 640}, 'prompt_cache_hit_tokens': 640, 'prompt_cache_miss_tokens': 890}
+2026-04-07 11:19:58,098 - agent - INFO - [LLM调用成功] 耗时: 3.40s
+2026-04-07 11:19:58,098 - agent - INFO - [tokens]: {'completion_tokens': 101, 'prompt_tokens': 648, 'total_tokens': 749, 'completion_tokens_details': None, 'prompt_tokens_details': {'audio_tokens': None, 'cached_tokens': 192}, 'prompt_cache_hit_tokens': 192, 'prompt_cache_miss_tokens': 456}
+2026-04-07 11:31:34,133 - agent - INFO - MongoDB数据库连接成功

@@ -5,7 +5,7 @@ import re
 from langchain_core.messages import HumanMessage
 
 from core.settings import settings
-from src.congfig.llm_config import LLMService
+from src.config.llm_config import LLMService
 from src.models.llm import deepseek_llm
 from src.prompts.agent.initial_action import INITIAL_ACTION_PROMPT
 from src.types.agent_state import State

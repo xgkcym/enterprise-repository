@@ -63,6 +63,7 @@ class Settings(BaseSettings):
     reranker_min_score:float = Field(default=os.getenv("RERANKER_MIN_SCORE"))
     context_max_len:int = Field(default=os.getenv("CONTEXT_MAX_LEN"))
     max_expand:int = Field(default=os.getenv("MAX_EXPAND"))
+    agent_max_steps:int = Field(default=int(os.getenv("AGENT_MAX_STEPS", 10)))
     update_doc_time:int = Field(default=os.getenv("UPDATE_DOC_TIME"))
     is_need_doc:bool = Field(default=False)
     await_upload_file_num:int = Field(default=0)

@@ -1,7 +1,7 @@
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import HumanMessage
 
-from src.congfig.llm_config import LLMService
+from src.config.llm_config import LLMService
 from src.prompts.agent.translate import TRANSLATE_PROMPT
 
 

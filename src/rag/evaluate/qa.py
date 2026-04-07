@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 from src.models.llm import deepseek_llm
 from utils.logger_handler import logger
 from core.settings import settings
-from src.congfig.llm_config import LLMService
+from src.config.llm_config import LLMService
 from src.prompts.rag.qa_generation import QA_GENERATION_PROMPT
 from utils.utils import get_current_time
 

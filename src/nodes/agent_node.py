@@ -7,7 +7,7 @@ from src.agent.policy import (
     guard_input,
     should_force_finish,
 )
-from src.congfig.llm_config import LLMService
+from src.config.llm_config import LLMService
 from src.models.llm import deepseek_llm
 from src.prompts.agent.agent import AGENT_PROMPT
 from src.types.agent_state import State

@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
+from core.settings import settings
 from service.database.connect import get_session
 from service.dependencies.auth import get_current_active_user
 from service.models.role_department import RoleDepartmentModel
@@ -46,7 +47,7 @@ async def query_agent(
         user_id=str(current_user.id or ""),
         session_id=payload.session_id,
         user_profile=user_profile,
-        max_steps=6,
+        max_steps=settings.agent_max_steps,
     )
 
     return {

@@ -1,58 +1,42 @@
-<template>
+﻿<template>
   <div class="w-80 bg-white border-r border-gray-200 flex flex-col">
-    <!-- 侧边栏头部 -->
     <div class="p-4 border-b border-gray-200">
-      <h2 class="text-lg font-semibold text-primary">RAG检索助手</h2>
+      <h2 class="text-lg font-semibold text-primary">RAG 检索助手</h2>
     </div>
 
-    <!-- 手风琴区域 -->
     <div class="flex-1 overflow-y-auto p-2 sidebar-height">
-      <!-- 文件/文件夹手风琴 -->
-      <div class="mb-2" :class="{ 'accordion-expanded': isFilesExpanded }">
+      <div class="mb-2">
         <div
           class="accordion-header flex items-center justify-between p-3 bg-secondary rounded-lg cursor-pointer hover:bg-gray-200 transition-colors"
-          @click="toggleAccordion('files')">
+          @click="toggleAccordion('files')"
+        >
           <div class="flex items-center">
             <i class="fas fa-folder-open mr-2 text-primary"></i>
             <span class="font-medium">上传文件</span>
           </div>
-          <i class="fas fa-chevron-down text-xs transition-transform duration-300"
-            :class="{ 'rotate-180': isFilesExpanded }"></i>
+          <i class="fas fa-chevron-down text-xs transition-transform duration-300" :class="{ 'rotate-180': isFilesExpanded }"></i>
         </div>
-        <div class="accordion-content mt-2 pl-2">
-          <!-- 文件列表（重构后） -->
-          <div id="fileList" class="space-y-2">
-            <!-- 1. 无文件时显示提示 -->
-            <div v-if="!fileList || fileList.length <= 0" class="text-gray-500 text-sm italic pl-6">
-              暂无上传文件，请点击下方上传按钮
-            </div>
 
-            <!-- 2. 有文件时，按部门分组显示为文件夹 -->
+        <div v-if="isFilesExpanded" class="mt-2 pl-2">
+          <div id="fileList" class="space-y-2">
+            <div v-if="!fileList.length" class="text-gray-500 text-sm italic pl-6">暂无上传文件</div>
+
             <div v-else class="space-y-2">
-              <div v-for="(folder, folderIndex) in fileList" :key="folderIndex" class="border-l-2 border-gray-200 pl-4">
-                <!-- 文件夹头部（可展开/收起） -->
-                <div class="flex items-center justify-between p-2 rounded hover:bg-gray-100 cursor-pointer"
-                  @click="toggleFolder(folder.dept_id)">
+              <div v-for="folder in fileList" :key="folder.dept_id" class="border-l-2 border-gray-200 pl-4">
+                <div class="flex items-center justify-between p-2 rounded hover:bg-gray-100 cursor-pointer" @click="toggleFolder(folder.dept_id)">
                   <div class="flex items-center">
-                    <i class="fas mr-2 text-accent"
-                      :class="expandedFolders.includes(folder.dept_id) ? 'fa-folder-open' : 'fa-folder'"></i>
+                    <i class="fas mr-2 text-accent" :class="expandedFolders.includes(folder.dept_id) ? 'fa-folder-open' : 'fa-folder'"></i>
                     <span class="text-sm font-medium">{{ folder.dept_name || `部门 ${folder.dept_id}` }}</span>
-                    <span class="ml-2 text-xs text-gray-500">({{ folder.children.length }}个文件)</span>
+                    <span class="ml-2 text-xs text-gray-500">({{ folder.children.length }} 个文件)</span>
                   </div>
-                  <i class="fas fa-chevron-down text-xs transition-transform duration-300"
-                    :class="{ 'rotate-180': expandedFolders.includes(folder.dept_id) }"></i>
+                  <i class="fas fa-chevron-down text-xs transition-transform duration-300" :class="{ 'rotate-180': expandedFolders.includes(folder.dept_id) }"></i>
                 </div>
 
-                <!-- 文件夹内的文件列表 -->
-                <div v-if="expandedFolders.includes(folder.dept_id)"
-                  class="space-y-1 mt-1 pl-4 border-l-2 border-gray-100">
-                  <div v-for="(file, fileIndex) in folder.children" :key="fileIndex"
-                    class="p-2 rounded hover:bg-gray-100 cursor-pointer flex items-center justify-between">
-                    <div class="flex items-center truncate">
-                      <i class="fas mr-2 text-accent" :class="getFileIcon(file.type)"></i>
-                      <div class="truncate">
-                        <div class="text-sm font-medium truncate">{{ file.file_name }}</div>
-                      </div>
+                <div v-if="expandedFolders.includes(folder.dept_id)" class="space-y-1 mt-1 pl-4 border-l-2 border-gray-100">
+                  <div v-for="file in folder.children" :key="file.id || file.file_name" class="p-2 rounded hover:bg-gray-100 flex items-center">
+                    <i class="fas mr-2 text-accent" :class="getFileIcon(file.type)"></i>
+                    <div class="truncate">
+                      <div class="text-sm font-medium truncate">{{ file.file_name }}</div>
                     </div>
                   </div>
                 </div>
@@ -62,167 +46,165 @@
         </div>
       </div>
 
-      <!-- 聊天历史手风琴 -->
-      <div class="mb-2" :class="{ 'accordion-expanded': isHistoryExpanded }">
-        <div
-          class="accordion-header flex items-center justify-between p-3 bg-secondary rounded-lg cursor-pointer hover:bg-gray-200 transition-colors"
-          @click="toggleAccordion('history')">
-          <div class="flex items-center">
-            <i class="fas fa-history mr-2 text-primary"></i>
-            <span class="font-medium">聊天历史</span>
+      <div class="mb-2">
+        <div class="flex items-center gap-2">
+          <div
+            class="accordion-header flex-1 flex items-center justify-between p-3 bg-secondary rounded-lg cursor-pointer hover:bg-gray-200 transition-colors"
+            @click="toggleAccordion('history')"
+          >
+            <div class="flex items-center">
+              <i class="fas fa-history mr-2 text-primary"></i>
+              <span class="font-medium">聊天历史</span>
+            </div>
+            <i class="fas fa-chevron-down text-xs transition-transform duration-300" :class="{ 'rotate-180': isHistoryExpanded }"></i>
           </div>
-          <i class="fas fa-chevron-down text-xs transition-transform duration-300"
-            :class="{ 'rotate-180': isHistoryExpanded }"></i>
+
+          <button class="px-3 py-3 rounded-lg bg-primary text-white hover:bg-primary/90 transition-colors" @click="$emit('new-chat')">
+            <i class="fas fa-plus"></i>
+          </button>
         </div>
-        <div class="accordion-content mt-2 pl-2">
-          <!-- 聊天历史列表 -->
-          <div class="space-y-2">
-            <div v-for="(history, index) in chatHistory" :key="index"
-              class="p-2 rounded hover:bg-gray-100 cursor-pointer flex items-center justify-between">
-              <div class="flex items-center truncate">
+
+        <div v-if="isHistoryExpanded" class="mt-2 pl-2">
+          <div v-if="!sessions.length" class="text-gray-500 text-sm italic pl-3">暂无历史会话</div>
+          <div v-else class="space-y-2">
+            <div
+              v-for="history in sessions"
+              :key="history.session_id"
+              class="p-2 rounded cursor-pointer flex items-center justify-between"
+              :class="currentSessionId === history.session_id ? 'bg-primary/10 border border-primary/20' : 'hover:bg-gray-100'"
+              @click="$emit('select-session', history.session_id)"
+            >
+              <div class="flex items-center truncate min-w-0">
                 <i class="fas fa-comment-dots mr-2 text-accent"></i>
                 <span class="truncate text-sm">{{ history.title }}</span>
               </div>
-              <i class="fas fa-trash-alt text-gray-400 hover:text-red-500 text-xs"></i>
+              <button class="text-gray-400 hover:text-red-500 text-xs ml-2" @click.stop="confirmDelete(history.session_id)">
+                <i class="fas fa-trash-alt"></i>
+              </button>
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- 上传功能区 -->
     <div class="p-4 border-t border-gray-200 bg-white">
-      <div class="space-y-3">
-        <!-- 上传按钮组 -->
-        <div class="grid grid-cols-2 gap-3">
-          <!-- 文件夹上传按钮 -->
-          <label
-            class="flex flex-col items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-primary hover:bg-primary/5 transition-colors cursor-pointer">
-            <input type="file" @change="handleFolderUpload" webkitdirectory directory multiple class="hidden">
-            <i class="fas fa-folder-plus text-2xl text-primary mb-2"></i>
-            <span class="text-sm font-medium">上传文件夹</span>
-          </label>
+      <div class="grid grid-cols-2 gap-3">
+        <label class="flex flex-col items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-primary hover:bg-primary/5 transition-colors cursor-pointer">
+          <input type="file" @change="handleFolderUpload" webkitdirectory directory multiple class="hidden" />
+          <i class="fas fa-folder-plus text-2xl text-primary mb-2"></i>
+          <span class="text-sm font-medium">上传文件夹</span>
+        </label>
 
-          <!-- 文件上传按钮 -->
-          <label
-            class="flex flex-col items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-primary hover:bg-primary/5 transition-colors cursor-pointer">
-            <input type="file" @change="handleFileUpload" multiple class="hidden">
-            <i class="fas fa-file-upload text-2xl text-primary mb-2"></i>
-            <span class="text-sm font-medium">上传文件</span>
-          </label>
-        </div>
+        <label class="flex flex-col items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-primary hover:bg-primary/5 transition-colors cursor-pointer">
+          <input type="file" @change="handleFileUpload" multiple class="hidden" />
+          <i class="fas fa-file-upload text-2xl text-primary mb-2"></i>
+          <span class="text-sm font-medium">上传文件</span>
+        </label>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { upload_file, get_file } from "../api/file" // 修正拼写错误 upload_file -> upload_file
+import { onMounted, ref } from "vue";
 
-// 响应式数据
-const isFilesExpanded = ref(true)
-const isHistoryExpanded = ref(false)
-const fileList = ref([]) // 结构：[{ dept_id, dept_name, children: [file1, file2] }]
-const chatHistory = ref([
-  { title: '关于产品文档的检索' },
-  { title: '技术文档问答' }
-])
-const expandedFolders = ref([]) // 记录展开的文件夹ID
+import { get_file, upload_file } from "../api/file";
 
-// 手风琴切换
+defineProps({
+  sessions: {
+    type: Array,
+    default: () => [],
+  },
+  currentSessionId: {
+    type: String,
+    default: "",
+  },
+});
+
+const emit = defineEmits(["new-chat", "select-session", "delete-session"]);
+
+const isFilesExpanded = ref(true);
+const isHistoryExpanded = ref(false);
+const fileList = ref([]);
+const expandedFolders = ref([]);
+
 const toggleAccordion = (type) => {
-  if (type === 'files') {
-    isFilesExpanded.value = !isFilesExpanded.value
-  } else if (type === 'history') {
-    isHistoryExpanded.value = !isHistoryExpanded.value
-  }
-}
-
-// 文件夹展开/收起切换
-const toggleFolder = (deptId) => {
-  const index = expandedFolders.value.indexOf(deptId)
-  if (index > -1) {
-    expandedFolders.value.splice(index, 1)
+  if (type === "files") {
+    isFilesExpanded.value = !isFilesExpanded.value;
   } else {
-    expandedFolders.value.push(deptId)
+    isHistoryExpanded.value = !isHistoryExpanded.value;
   }
-}
+};
 
-// 文件大小格式化
-const formatFileSize = (bytes) => {
-  if (bytes === 0) return '0 B'
-  const k = 1024
-  const sizes = ['B', 'KB', 'MB', 'GB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
-}
+const toggleFolder = (deptId) => {
+  const index = expandedFolders.value.indexOf(deptId);
+  if (index > -1) {
+    expandedFolders.value.splice(index, 1);
+  } else {
+    expandedFolders.value.push(deptId);
+  }
+};
 
-// 获取文件图标
 const getFileIcon = (fileType) => {
-  if (!fileType) return 'fa-file'
-  if (fileType.includes('pdf')) return 'fa-file-pdf'
-  if (fileType.includes('word')) return 'fa-file-word'
-  if (fileType.includes('excel')) return 'fa-file-excel'
-  if (fileType.includes('image')) return 'fa-file-image'
-  return 'fa-file'
-}
+  if (!fileType) return "fa-file";
+  if (fileType.includes("pdf")) return "fa-file-pdf";
+  if (fileType.includes("word")) return "fa-file-word";
+  if (fileType.includes("excel")) return "fa-file-excel";
+  if (fileType.includes("image")) return "fa-file-image";
+  return "fa-file";
+};
 
-// 处理文件上传
-const handleFilesUpload = (files, isFolder) => {
-  if (files.length === 0) return
-  const p_all = []
-  Array.from(files).forEach((file,i) => {
-    const formData = new FormData()
-    formData.append("file", file,file.name)
-    formData.append("user_id", 1)
-    formData.append("dept_id",  1)
-    p_all.push(upload_file(formData))
-  })
-  Promise.all(p_all).then(res => {
-    queryFileList()
-  }).catch(err => {
-    console.error('上传文件失败:', err)
-  })
-}
-
-// 文件夹上传
-const handleFolderUpload = (e) => {
-  handleFilesUpload(e.target.files, true)
-}
-
-// 文件上传
-const handleFileUpload = (e) => {
-  handleFilesUpload(e.target.files, false)
-}
-
-
-
-// 查询文件列表
 const queryFileList = () => {
-  get_file().then(res => {
+  get_file().then((res) => {
     if (res.code === 200) {
-      const fileListData = []
-      res.data.forEach(v => {
-        const index = fileListData.findIndex(item => item.dept_id === v.dept_id)
-        if (index > -1) {
-          fileListData[index].children.push(v)
+      const grouped = [];
+      (res.data || []).forEach((file) => {
+        const index = grouped.findIndex((item) => item.dept_id === file.dept_id);
+        if (index >= 0) {
+          grouped[index].children.push(file);
         } else {
-          fileListData.push({
-            dept_id: v.dept_id,
-            dept_name: v.dept_name,
-            children: [v]
-          })
+          grouped.push({
+            dept_id: file.dept_id,
+            dept_name: file.dept_name,
+            children: [file],
+          });
         }
-      })
-      fileList.value = fileListData
+      });
+      fileList.value = grouped;
     }
-  })
-}
+  });
+};
 
-// 初始化
+const handleFilesUpload = (files) => {
+  if (!files.length) return;
+  const requests = Array.from(files).map((file) => {
+    const formData = new FormData();
+    formData.append("file", file, file.name);
+    formData.append("user_id", 1);
+    formData.append("dept_id", 1);
+    return upload_file(formData);
+  });
+
+  Promise.all(requests)
+    .then(() => queryFileList())
+    .catch((err) => console.error("上传文件失败:", err));
+};
+
+const handleFolderUpload = (event) => {
+  handleFilesUpload(event.target.files);
+};
+
+const handleFileUpload = (event) => {
+  handleFilesUpload(event.target.files);
+};
+
+const confirmDelete = (sessionId) => {
+  if (window.confirm("确认删除这个会话吗？")) {
+    emit("delete-session", sessionId);
+  }
+};
+
 onMounted(() => {
-  isFilesExpanded.value = true
-  queryFileList()
-})
+  queryFileList();
+});
 </script>

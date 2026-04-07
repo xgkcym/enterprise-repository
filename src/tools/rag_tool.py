@@ -3,7 +3,7 @@ from typing import Iterable, Literal, Optional
 from langchain_core.messages import HumanMessage
 from pydantic import BaseModel, ConfigDict, Field
 
-from src.congfig.llm_config import LLMService
+from src.config.llm_config import LLMService
 from src.models.llm import chatgpt_llm
 from src.prompts.agent.sub_query_aggregate import SUB_QUERY_AGGREGATE_PROMPT
 from src.rag.rag_service import rag_service

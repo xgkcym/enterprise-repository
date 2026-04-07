@@ -2,7 +2,7 @@
 
 from langchain_core.messages import HumanMessage
 
-from src.congfig.llm_config import LLMService
+from src.config.llm_config import LLMService
 from src.models.llm import chatgpt_llm
 from src.nodes.helpers import build_state_patch, create_event, finalize_event
 from src.prompts.agent.finalize_prompt import FINALIZE_PROMPT

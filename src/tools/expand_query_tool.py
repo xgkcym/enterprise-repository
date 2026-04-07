@@ -4,7 +4,7 @@ from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import HumanMessage
 from pydantic import Field
 
-from src.congfig.llm_config import LLMService
+from src.config.llm_config import LLMService
 from src.prompts.agent.expand import EXPAND_PROMPT
 from src.types.base_type import BaseNodeResult
 

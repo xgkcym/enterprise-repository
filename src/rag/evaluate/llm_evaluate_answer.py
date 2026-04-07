@@ -3,7 +3,7 @@ from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import HumanMessage
 from pydantic import Field
 
-from src.congfig.llm_config import LLMService
+from src.config.llm_config import LLMService
 from src.prompts.rag.evaluate import EVAL_PROMPT
 
 

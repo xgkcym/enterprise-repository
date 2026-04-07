@@ -1,10 +1,11 @@
-import axios from "axios";
+﻿import axios from "axios";
+import { ElLoading, ElMessage } from "element-plus";
 
-import { ElMessage, ElLoading } from "element-plus";
+import router from "../router";
+
 export const baseURL = "http://" + window.location.hostname + ":1016";
 
 let loadingInstance;
-const unLodingList = [];
 const request = axios.create({
   timeout: 300000,
   baseURL,
@@ -15,14 +16,10 @@ const request = axios.create({
 
 const whitelist = ["/user/login"];
 
-// 添加请求拦截器
 request.interceptors.request.use(
   function (config) {
-    // 在发送请求之前做些什么
-    if (!whitelist.includes(config.url) && !config.headers["Authorization"]) {
-      config.headers["Authorization"] = `Bearer ${
-        localStorage.getItem("token") || ""
-      }`;
+    if (!whitelist.includes(config.url) && !config.headers.Authorization) {
+      config.headers.Authorization = `Bearer ${localStorage.getItem("token") || ""}`;
     }
 
     loadingInstance = ElLoading.service({
@@ -34,19 +31,16 @@ request.interceptors.request.use(
   },
   function (error) {
     loadingInstance && loadingInstance.close();
-    // 对请求错误做些什么
     return Promise.reject(error);
   }
 );
-let errorTime;
-const errorDebounceTime = 1000; // 2秒内相同的错误只显示一次
 
-// 添加响应拦截器
+let errorTime;
+const errorDebounceTime = 1000;
+
 request.interceptors.response.use(
   function (response) {
     loadingInstance && loadingInstance.close();
-    // 2xx 范围内的状态码都会触发该函数。
-    // 对响应数据做点什么
     return response.data;
   },
   function (error) {
@@ -55,22 +49,19 @@ request.interceptors.response.use(
     if (!errorTime || now - errorTime > errorDebounceTime) {
       errorTime = now;
       if (!error.response) {
-        //网络请求
         ElMessage.error("网络错误");
+      } else if (error.response.status === 401) {
+        ElMessage.error("登录已过期");
+        router.replace({ path: "/" });
+      } else if (error.response.status === 403) {
+        ElMessage.error("权限不足");
+        router.replace({ path: "/" });
+      } else if (error.response.status === 404) {
+        ElMessage.error("请求地址错误");
+      } else if (error.response.status === 500) {
+        ElMessage.error("服务器错误");
       } else {
-        if (error.response.status == 401) {
-          ElMessage.error("登录过期");
-          router.replace({ path: "/" });
-        } else if (error.response.status == 403) {
-          ElMessage.error("权限不足");
-          router.replace({ path: "/" });
-        } else if (error.response.status == 404) {
-          ElMessage.error("请求地址错误");
-        } else if (error.response.status == 500) {
-          ElMessage.error("服务器错误");
-        } else {
-          ElMessage.error(error.response.data?.msg || error.response.data);
-        }
+        ElMessage.error(error.response.data?.msg || error.response.data?.detail || "请求失败");
       }
     }
     return Promise.reject(error);
