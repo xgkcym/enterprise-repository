@@ -3,12 +3,11 @@ from typing import Iterable
 from sqlmodel import func, select
 
 from core.custom_types import DocumentMetadata
-from src.database.postgres import get_sync_session
 from service.models.department import DepartmentModel
 from service.models.file import FileModel
 from service.models.role import RoleModel
 from service.models.role_department import RoleDepartmentModel
-from service.models.users import UserModel
+from src.database.postgres import get_sync_session
 from src.types.db_search_type import DBQueryKind, DBSearchContext
 from src.types.rag_type import DocumentInfo, RAGResult
 
@@ -17,26 +16,79 @@ def _resolved_query_text(*parts: str) -> str:
     return " ".join(part.strip() for part in parts if part and part.strip()).lower()
 
 
+def _contains_any(text: str, keywords: list[str]) -> bool:
+    return any(keyword in text for keyword in keywords)
+
+
 def _looks_like_count_query(text: str) -> bool:
-    markers = ["多少", "数量", "几个", "几条", "count", "how many", "总数"]
-    return any(marker in text for marker in markers)
+    markers = [
+        "多少",
+        "数量",
+        "几个",
+        "几条",
+        "总数",
+        "总量",
+        "count",
+        "how many",
+        "total",
+    ]
+    return _contains_any(text, markers)
+
+
+def _looks_like_recent_query(text: str) -> bool:
+    markers = ["最近", "最新", "recent", "latest", "刚上传", "近来"]
+    return _contains_any(text, markers)
+
+
+def _looks_like_file_query(text: str) -> bool:
+    markers = ["文件", "文档", "资料", "上传", "file", "document", "uploaded"]
+    return _contains_any(text, markers)
+
+
+def _looks_like_department_query(text: str) -> bool:
+    markers = ["部门", "department", "科室", "组织"]
+    return _contains_any(text, markers)
+
+
+def _looks_like_permission_query(text: str) -> bool:
+    markers = ["权限", "可访问", "访问范围", "scope", "permission", "accessible"]
+    return _contains_any(text, markers)
+
+
+def _looks_like_role_query(text: str) -> bool:
+    markers = ["角色", "role", "岗位"]
+    return _contains_any(text, markers)
+
+
+def _looks_like_first_person_query(text: str) -> bool:
+    markers = ["我", "我的", "我能", "我可以", "my", "mine", "当前用户"]
+    return _contains_any(text, markers)
 
 
 def _infer_db_query_kind(context: DBSearchContext) -> DBQueryKind:
     text = _resolved_query_text(context.query or "", context.rewritten_query or "")
 
-    if ("角色" in text or "role" in text) and ("部门" in text or "权限" in text or "scope" in text):
+    if _looks_like_role_query(text) and (_looks_like_department_query(text) or _looks_like_permission_query(text)):
         return "role_department_scope"
-    if ("可访问" in text or "权限" in text or "部门" in text) and ("部门" in text or "department" in text):
+
+    if _looks_like_department_query(text) and _looks_like_permission_query(text):
         return "accessible_departments"
-    if ("我" in text or "我的" in text or "my" in text) and ("上传" in text or "文件" in text or "file" in text):
-        return "my_uploaded_files" if not _looks_like_count_query(text) else "accessible_file_count"
-    if ("最近" in text or "最新" in text or "recent" in text or "latest" in text) and (
-        "文件" in text or "file" in text
-    ):
+
+    if _looks_like_first_person_query(text) and _looks_like_file_query(text):
+        return "my_uploaded_files"
+
+    if _looks_like_recent_query(text) and _looks_like_file_query(text):
         return "recent_accessible_files"
-    if ("文件" in text or "file" in text) and _looks_like_count_query(text):
+
+    if _looks_like_file_query(text) and _looks_like_count_query(text):
         return "accessible_file_count"
+
+    if _looks_like_first_person_query(text) and _looks_like_department_query(text):
+        return "accessible_departments"
+
+    if _looks_like_first_person_query(text) and _looks_like_permission_query(text):
+        return "accessible_departments"
+
     return "unsupported"
 
 
@@ -132,7 +184,7 @@ def _query_accessible_file_count(context: DBSearchContext) -> tuple[str, list[Do
         file_name="accessible_file_count",
         section_title="accessible_file_count",
     )
-    answer = f"当前用户可访问的文件数量为 {total}。"
+    answer = f"当前用户可访问的文件数量是 {total}。"
     return answer, [doc], [doc.node_id]
 
 
@@ -257,21 +309,9 @@ def _query_role_department_scope(context: DBSearchContext) -> tuple[str, list[Do
 
 
 def db_search_tool(context: DBSearchContext) -> RAGResult:
-    """数据库搜索工具主入口函数
-
-    根据查询上下文推断查询类型，执行对应的数据库查询并返回格式化结果
-
-    Args:
-        context: 数据库搜索上下文对象，包含用户ID、角色ID、允许访问的部门ID等信息
-
-    Returns:
-        RAGResult: 包含查询结果、文档信息、引用等内容的标准化结果对象
-    """
-    # 推断查询类型并记录诊断信息
     query_kind = _infer_db_query_kind(context)
     diagnostics = [f"db_query_kind={query_kind}"]
 
-    # 处理不支持的查询类型
     if query_kind == "unsupported":
         return _build_result(
             answer="当前结构化查询工具暂不支持这个问题类型。",
@@ -282,7 +322,6 @@ def db_search_tool(context: DBSearchContext) -> RAGResult:
         )
 
     try:
-        # 根据查询类型分发到不同的查询处理器
         if query_kind == "accessible_departments":
             answer, documents, citations = _query_accessible_departments(context)
         elif query_kind == "accessible_file_count":
@@ -294,10 +333,8 @@ def db_search_tool(context: DBSearchContext) -> RAGResult:
         else:
             answer, documents, citations = _query_role_department_scope(context)
 
-        # 对查询结果进行去重处理
         documents = _dedupe_docs(documents)
 
-        # 处理空结果情况
         if not documents:
             return _build_result(
                 answer=answer,
@@ -306,7 +343,6 @@ def db_search_tool(context: DBSearchContext) -> RAGResult:
                 diagnostics=diagnostics + ["db_query_no_rows"],
             )
 
-        # 构建成功结果返回
         return _build_result(
             answer=answer,
             documents=documents,
@@ -316,7 +352,6 @@ def db_search_tool(context: DBSearchContext) -> RAGResult:
             diagnostics=diagnostics + [f"db_document_count={len(documents)}"],
         )
     except Exception as exc:
-        # 处理查询过程中的异常情况
         return _build_result(
             answer="数据库查询执行失败。",
             is_sufficient=False,

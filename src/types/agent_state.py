@@ -45,6 +45,8 @@ class State(BaseModel):
     diagnostics: List[str] = Field(default_factory=list, description="诊断信息")
     current_step: int = Field(default=0, description="当前步骤数")
     max_steps: int = Field(default=20, description="最大步骤数")
+    duration_ms: int = Field(default=0, description="运行耗时毫秒")
+    llm_usage: Dict[str, Any] = Field(default_factory=dict, description="LLM 使用统计")
 
     status: Literal["pending", "success", "failed"] = Field(default="pending", description="状态")
     fail_reason: Optional[str] = Field(default=None, description="失败原因")

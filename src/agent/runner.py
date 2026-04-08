@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import argparse
 import json
+import time
 from typing import Any
 from uuid import uuid4
 
 from core.settings import settings
 from src.agent.graph import graph
+from src.config.llm_config import LLMService
 from src.types.agent_state import State
 
 
@@ -81,7 +83,9 @@ def _build_citation_details(last_rag_result: Any) -> tuple[list[str], list[str],
         doc = doc_map.get(citation)
         # 生成可读的引用标签
         label = _build_citation_label(doc) if doc else str(citation)
-        citation_labels.append(label)
+
+        if label not in citation_labels:
+            citation_labels.append(label)
 
         # 构建基础详情信息
         detail = {
@@ -122,10 +126,20 @@ def run_agent(
         max_steps=max_steps,
         output_level=output_level or settings.agent_output_level,
     )
-    result = graph.invoke(initial_state)
+    usage_token = LLMService.start_usage_collection()
+    start = time.time()
+    try:
+        result = graph.invoke(initial_state)
+    finally:
+        llm_records = LLMService.stop_usage_collection(usage_token)
+    duration_ms = int((time.time() - start) * 1000)
     if isinstance(result, State):
-        return result
-    return State(**result)
+        state = result
+    else:
+        state = State(**result)
+    state.duration_ms = duration_ms
+    state.llm_usage = LLMService.summarize_usage(llm_records)
+    return state
 
 
 def summarize_trace(state: State) -> list[dict[str, Any]]:
@@ -148,6 +162,72 @@ def summarize_trace(state: State) -> list[dict[str, Any]]:
     return rows
 
 
+def _summarize_event_payload(payload: Any) -> Any:
+    if payload is None:
+        return None
+    if hasattr(payload, "model_dump"):
+        data = payload.model_dump()
+    elif isinstance(payload, dict):
+        data = dict(payload)
+    else:
+        return str(payload)
+
+    if not isinstance(data, dict):
+        return data
+
+    compact: dict[str, Any] = {}
+    for key in [
+        "query",
+        "rewritten_query",
+        "expand_query",
+        "decompose_query",
+        "answer",
+        "message",
+        "reason",
+        "fail_reason",
+        "is_sufficient",
+        "citations",
+        "retrieval_queries",
+        "retrieval_candidate_node_ids",
+        "rerank_node_ids",
+        "documents",
+        "filters",
+        "use_retrieval",
+        "use_rerank",
+        "retrieval_top_k",
+        "rerank_top_k",
+    ]:
+        value = data.get(key)
+        if value not in (None, "", [], {}):
+            compact[key] = value
+
+    if "documents" in compact and isinstance(compact["documents"], list):
+        compact["documents"] = len(compact["documents"])
+    return compact or data
+
+
+def summarize_action_history(state: State) -> list[dict[str, Any]]:
+    rows = []
+    for item in state.action_history:
+        rows.append(
+            {
+                "id": item.id,
+                "kind": item.kind,
+                "name": item.name,
+                "status": item.status,
+                "attempt": item.attempt,
+                "max_attempt": item.max_attempt,
+                "started_at": item.started_at,
+                "ended_at": item.ended_at,
+                "duration_ms": item.duration,
+                "error": item.error,
+                "input": _summarize_event_payload(item.input),
+                "output": _summarize_event_payload(item.output),
+            }
+        )
+    return rows
+
+
 def build_run_report(state: State) -> dict[str, Any]:
     last_rag_result = state.last_rag_result
     raw_citations, citation_labels, citation_details = _build_citation_details(last_rag_result) if last_rag_result else ([], [], [])
@@ -162,6 +242,7 @@ def build_run_report(state: State) -> dict[str, Any]:
         "run_id": state.run_id,
         "query": state.query,
         "resolved_query": state.resolved_query,
+        "working_query": state.working_query,
         "status": state.status,
         "output_level": state.output_level,
         "action": state.action,
@@ -173,6 +254,8 @@ def build_run_report(state: State) -> dict[str, Any]:
         "fail_reason": state.fail_reason,
         "current_step": state.current_step,
         "max_steps": state.max_steps,
+        "duration_ms": state.duration_ms,
+        "llm_usage": state.llm_usage,
         "working_memory": state.working_memory,
         "short_term_memory": state.short_term_memory,
         "diagnostics": state.diagnostics,
@@ -180,6 +263,7 @@ def build_run_report(state: State) -> dict[str, Any]:
         "expand_query": state.expand_query,
         "decompose_query": state.decompose_query,
         "sub_query_results": sub_query_results,
+        "action_history": summarize_action_history(state),
         "last_rag_result": {
             "answer": getattr(last_rag_result, "answer", ""),
             "evidence_summary": getattr(last_rag_result, "evidence_summary", ""),

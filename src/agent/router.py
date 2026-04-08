@@ -13,10 +13,8 @@ tool_route = [
 ]
 
 route_list = reasoning_route + tool_route + ["finalize", "abort", "finish"]
-
-route_map = {
-    "direct_answer": "finalize",
-}
+route_list.append("direct_answer")
+route_map = {}
 
 for route in route_list:
     if route == 'finish':

@@ -4,6 +4,7 @@ from langgraph.graph import StateGraph
 from src.nodes.agent_node import agent_node
 from src.nodes.decompose_query_node import decompose_query_node
 from src.nodes.db_search_node import db_search_node
+from src.nodes.direct_answer_node import direct_answer_node
 from src.nodes.expand_query_node import expand_query_node
 from src.nodes.finalize_node import finalize_node
 from src.nodes.rag_node import rag_node
@@ -25,6 +26,7 @@ builder.set_entry_point("resolved_query")
 
 builder.add_node("agent", agent_node)
 
+builder.add_node("direct_answer", direct_answer_node)
 builder.add_node("rewrite_query", rewrite_query_node)
 builder.add_node("expand_query", expand_query_node)
 builder.add_node("decompose_query", decompose_query_node)
@@ -38,10 +40,17 @@ builder.add_edge("resolved_query", "agent")
 builder.add_edge("rag", "agent")
 builder.add_edge("web_search", "agent")
 builder.add_edge("db_search", "agent")
+builder.add_conditional_edges(
+    "direct_answer",
+    route,
+)
 builder.add_edge("rewrite_query", "agent")
 builder.add_edge("expand_query", "agent")
 builder.add_edge("decompose_query", "agent")
-builder.add_edge("finalize", END)
+builder.add_conditional_edges(
+    "finalize",
+    route,
+)
 
 
 builder.add_conditional_edges(

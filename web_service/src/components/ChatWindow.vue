@@ -226,7 +226,6 @@ const scrollToBottom = async () => {
 };
 
 const isUserMessage = (message) => message.role === "user";
-
 const handleOutputLevelChange = (event) => {
   emit("update:output-level", event.target.value);
 };

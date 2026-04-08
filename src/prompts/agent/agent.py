@@ -40,12 +40,26 @@ AGENT_PROMPT = """
 
 规则：
 1. 从 allowed_actions 中精确选择一个动作。
-2. 对于企业内部知识库问题，优先选择 rag。
-3. 对于明显具有时效性的公开信息问题，优先选择 web_search。
-4. 对于结构化计数、列表、权限、映射或上传记录等问题，优先选择 db_search。
-5. 如果证据仍然不足，但重写、扩展或分解查询可能有所帮助，则继续推理而不是完成（finish）。
-6. 仅当没有更好的下一步动作时，才选择 finish。
-7. 如果 raw_query 和 resolved_query 不同，不要偏离用户的原始意图。
+2. 先判断当前问题缺的是什么：
+   - 缺企业内部证据 -> rag
+   - 缺公开实时信息 -> web_search
+   - 缺结构化字段或统计结果 -> db_search
+   - 缺查询表达清晰度 -> rewrite_query
+   - 缺召回范围 -> expand_query
+   - 缺任务结构 -> decompose_query
+3. 如果现有证据已经足够回答，优先 finish/finalize，不要重复调用工具。
+4. 不要连续重复同一类无效工具；如果上一步工具失败，要根据失败原因换策略。
+5. db_search 只处理结构化问题；rag 处理企业文档知识；web_search 处理公开实时信息。不要混用。
+6. 不要默认继续调用工具。只有明确知道下一步能显著补足证据时，才继续。
+7. 如果 raw_query 和 resolved_query 不同，不要偏离用户原始意图。
+8. 如果 allowed_actions 同时包含工具和推理动作，优先选择最直接能补足缺口的那个动作，而不是机械选择第一个。
+
+常见场景示例：
+- “解释一下 SSE 是什么” -> direct_answer / finish
+- “我们部门上传了多少文件” -> db_search
+- “公司报销制度是什么” -> rag
+- “今天的 AI 新闻有哪些” -> web_search
+- “这个方案和上一个方案的区别、风险、落地步骤” -> decompose_query
 
 仅返回 JSON：
 {{

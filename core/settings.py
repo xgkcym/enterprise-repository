@@ -68,6 +68,12 @@ class Settings(BaseSettings):
     agent_output_level:Literal["concise","standard","detailed"] = Field(
         default=os.getenv("AGENT_OUTPUT_LEVEL", "standard")
     )
+    monitor_default_input_cost_per_1m: float = Field(default=float(os.getenv("MONITOR_DEFAULT_INPUT_COST_PER_1M", "0")))
+    monitor_default_output_cost_per_1m: float = Field(default=float(os.getenv("MONITOR_DEFAULT_OUTPUT_COST_PER_1M", "0")))
+    monitor_openai_input_cost_per_1m: float = Field(default=float(os.getenv("MONITOR_OPENAI_INPUT_COST_PER_1M", "2.5")))
+    monitor_openai_output_cost_per_1m: float = Field(default=float(os.getenv("MONITOR_OPENAI_OUTPUT_COST_PER_1M", "10")))
+    monitor_deepseek_input_cost_per_1m: float = Field(default=float(os.getenv("MONITOR_DEEPSEEK_INPUT_COST_PER_1M", "0.27")))
+    monitor_deepseek_output_cost_per_1m: float = Field(default=float(os.getenv("MONITOR_DEEPSEEK_OUTPUT_COST_PER_1M", "1.1")))
     update_doc_time:int = Field(default=os.getenv("UPDATE_DOC_TIME"))
     is_need_doc:bool = Field(default=False)
     await_upload_file_num:int = Field(default=0)

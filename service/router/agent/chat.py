@@ -87,7 +87,29 @@ async def get_chat_session_messages(
         session_id=session_id,
         user_id=int(current_user.id),
     )
-    return {"code": 200, "message": "success", "data": {"session": session_doc, "messages": messages}}
+    run_map = await asyncio.to_thread(
+        chat_store.get_runs_by_ids,
+        run_ids=[item.get("run_id") for item in messages if item.get("run_id")],
+    )
+    enriched_messages = []
+    for message in messages:
+        report = (run_map.get(message.get("run_id")) or {}).get("report") or {}
+        enriched_messages.append(
+            {
+                **message,
+                "report_summary": {
+                    "status": report.get("status"),
+                    "fail_reason": report.get("fail_reason"),
+                    "action": report.get("action"),
+                    "reason": report.get("reason"),
+                    "trace": report.get("trace") or [],
+                    "action_history": report.get("action_history") or [],
+                }
+                if report
+                else None,
+            }
+        )
+    return {"code": 200, "message": "success", "data": {"session": session_doc, "messages": enriched_messages}}
 
 
 @agent_router.delete("/sessions/{session_id}")
@@ -226,7 +248,11 @@ async def stream_chat(
                     "report_summary": {
                         "status": report.get("status"),
                         "fail_reason": report.get("fail_reason"),
+                        "action": report.get("action"),
+                        "reason": report.get("reason"),
                         "citations": citations,
+                        "trace": report.get("trace") or [],
+                        "action_history": report.get("action_history") or [],
                     },
                 },
             )

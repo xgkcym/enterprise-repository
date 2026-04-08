@@ -39,6 +39,7 @@ class ChatStore:
         self.messages.create_index("message_id", unique=True)
         self.message_runs.create_index("run_id", unique=True)
         self.message_runs.create_index([("session_id", 1), ("created_at", DESCENDING)])
+        self.message_runs.create_index([("created_at", DESCENDING)])
 
     @staticmethod
     def _serialize_session(doc: dict[str, Any] | None) -> dict[str, Any] | None:
@@ -101,6 +102,16 @@ class ChatStore:
             sort=[("updated_at", DESCENDING)],
         )
         return [self._serialize_session(doc) for doc in docs]
+
+    def list_sessions_since(self, *, start_at: str) -> list[dict[str, Any]]:
+        docs = self.sessions.find(
+            {
+                "created_at": {"$gte": start_at},
+                "deleted": {"$ne": True},
+            },
+            sort=[("created_at", DESCENDING)],
+        )
+        return list(docs)
 
     def create_message(
         self,
@@ -214,6 +225,28 @@ class ChatStore:
         }
         self.message_runs.insert_one(doc)
         return {"run_id": doc["run_id"], "created_at": doc["created_at"]}
+
+    def list_recent_runs(self, *, limit: int = 20) -> list[dict[str, Any]]:
+        docs = self.message_runs.find(
+            {},
+            sort=[("created_at", DESCENDING)],
+            limit=limit,
+        )
+        return list(docs)
+
+    def get_runs_by_ids(self, *, run_ids: list[str]) -> dict[str, dict[str, Any]]:
+        valid_ids = [run_id for run_id in run_ids if run_id]
+        if not valid_ids:
+            return {}
+        docs = self.message_runs.find({"run_id": {"$in": valid_ids}})
+        return {doc["run_id"]: doc for doc in docs}
+
+    def list_runs_since(self, *, start_at: str) -> list[dict[str, Any]]:
+        docs = self.message_runs.find(
+            {"created_at": {"$gte": start_at}},
+            sort=[("created_at", DESCENDING)],
+        )
+        return list(docs)
 
     def attach_run_id(self, *, message_id: str, user_id: int, run_id: str) -> None:
         self.messages.update_one(

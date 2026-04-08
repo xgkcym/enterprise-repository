@@ -126,40 +126,33 @@ def _looks_like_external_query(text: str) -> bool:
 
 
 def _looks_like_structured_db_query(text: str) -> bool:
-    """判断查询是否适合使用结构化数据库搜索
-
-    通过检查查询文本中是否包含特定关键词和领域术语的组合，来判断是否适合使用结构化数据库搜索。
-    该方法需要同时满足两个条件：
-    1. 包含数量查询或列表查询相关的关键词
-    2. 包含特定领域相关的术语
-
-    Args:
-        text: 用户输入的查询文本
-
-    Returns:
-        bool: 如果文本同时包含数量/列表关键词和领域术语则返回True，否则返回False
-    """
-    # 标准化处理：去除前后空格，转换为小写，处理None值
     normalized = (text or "").strip().lower()
     if not normalized:
         return False
 
-    # 定义数量查询和列表查询相关的关键词（包含中英文）
-    markers = [
-        "多少", "数量", "几个", "列表", "清单", "最近", "最新",
-        "我上传", "我的文件", "可访问部门", "权限范围", "角色部门",
-        "count", "how many", "list", "recent files",
-        "uploaded files", "department scope", "accessible departments",
-    ]
+    file_terms = ["文件", "文档", "资料", "上传", "file", "document", "uploaded"]
+    dept_terms = ["部门", "department", "科室", "组织"]
+    role_terms = ["角色", "role", "岗位"]
+    permission_terms = ["权限", "可访问", "访问范围", "scope", "permission", "accessible"]
+    list_terms = ["多少", "数量", "几个", "几条", "列表", "清单", "最近", "最新", "有哪些", "哪些", "count", "how many", "list", "recent", "latest"]
+    first_person_terms = ["我", "我的", "我能", "我可以", "my", "mine", "当前用户"]
 
-    # 定义特定领域相关的术语（包含中英文）
-    domain_terms = [
-        "文件", "部门", "角色", "上传", "权限",
-        "file", "department", "role", "permission",
-    ]
+    mentions_file = any(term in normalized for term in file_terms)
+    mentions_department = any(term in normalized for term in dept_terms)
+    mentions_role = any(term in normalized for term in role_terms)
+    mentions_permission = any(term in normalized for term in permission_terms)
+    mentions_list_intent = any(term in normalized for term in list_terms)
+    mentions_first_person = any(term in normalized for term in first_person_terms)
 
-    # 检查标准化后的文本是否同时包含数量/列表关键词和领域术语
-    return any(marker in normalized for marker in markers) and any(term in normalized for term in domain_terms)
+    if mentions_role and (mentions_department or mentions_permission):
+        return True
+    if mentions_department and (mentions_permission or mentions_first_person or mentions_list_intent):
+        return True
+    if mentions_file and (mentions_list_intent or mentions_first_person):
+        return True
+    if mentions_permission and mentions_first_person:
+        return True
+    return False
 
 
 def _contains_any(text: str, keywords: list[str]) -> bool:
@@ -410,6 +403,21 @@ def decide_initial_action(state: State) -> InitialActionDecision:
 
 
 def _fallback_initial_action(query: str) -> InitialActionDecision:
+    if _should_direct_answer(query):
+        return InitialActionDecision(
+            next_action="direct_answer",
+            reason="fallback_direct_answer",
+        )
+    if _looks_like_structured_db_query(query):
+        return InitialActionDecision(
+            next_action="db_search",
+            reason="fallback_structured_db_query",
+        )
+    if _looks_like_external_query(query):
+        return InitialActionDecision(
+            next_action="web_search",
+            reason="fallback_external_query",
+        )
     if is_complex_query(query):
         return InitialActionDecision(
             next_action="decompose_query",
@@ -448,6 +456,9 @@ def get_allowed_actions(state: State) -> list[str]:
     if not reasoning_history:
         # 如果没有推理历史，则决定初始动作
         initial_actions = [decide_initial_action(state).next_action]
+        if _should_direct_answer(current_query):
+            initial_actions.append("direct_answer")
+        initial_actions.append("rag")
         if _looks_like_external_query(current_query):
             initial_actions.append("web_search")
         if _looks_like_structured_db_query(current_query):
@@ -458,12 +469,14 @@ def get_allowed_actions(state: State) -> list[str]:
     last_tool = next((event for event in reversed(state.action_history) if event.kind == "tool"), None)
     if not last_tool:
         # 如果没有工具使用历史，默认返回RAG动作
-        actions = ["rag"]
+        actions = ["rag", "rewrite_query", "expand_query", "decompose_query"]
+        if _should_direct_answer(current_query):
+            actions.insert(0, "direct_answer")
         if _looks_like_external_query(current_query):
             actions.append("web_search")
         if _looks_like_structured_db_query(current_query):
             actions.append("db_search")
-        return actions
+        return list(dict.fromkeys(actions))
 
     # 收集最近连续执行的推理动作（从最近开始倒序检查）
     trailing_reasoning = []
@@ -477,33 +490,40 @@ def get_allowed_actions(state: State) -> list[str]:
         # 如果有连续推理动作
         if len(trailing_reasoning) >= 2:
             # 连续2次以上推理后，只允许工具动作
-            return list(CURRENT_TOOL_ACTIONS)
+            actions = list(CURRENT_TOOL_ACTIONS)
+            if _looks_like_external_query(current_query):
+                actions.append("web_search")
+            if _looks_like_structured_db_query(current_query):
+                actions.append("db_search")
+            return list(dict.fromkeys(actions))
         # 否则允许工具+推理动作
         actions = list(CURRENT_TOOL_ACTIONS) + list(CURRENT_REASONING_ACTIONS)
     else:
         # 根据最近工具动作的失败原因决定后续动作
         fail_reason = getattr(last_tool.output, "fail_reason", None)
         if fail_reason == "no_data":
-            actions = ["rewrite_query", "expand_query", "web_search"]
+            actions = ["rewrite_query", "expand_query", "rag", "web_search"]
             if _looks_like_structured_db_query(current_query):
                 actions.append("db_search")
         elif fail_reason == "low_recall":
-            actions = ["expand_query", "rewrite_query", "decompose_query", "web_search"]
+            actions = ["expand_query", "rewrite_query", "decompose_query", "rag", "web_search"]
             if _looks_like_structured_db_query(current_query):
                 actions.append("db_search")
         elif fail_reason == "ambiguous_query":
-            actions = ["rewrite_query", "decompose_query", "expand_query"]
+            actions = ["rewrite_query", "decompose_query", "expand_query", "rag"]
         elif fail_reason in {"bad_ranking", "bad_reranking"}:
-            actions = ["decompose_query", "rewrite_query"]
+            actions = ["decompose_query", "rewrite_query", "expand_query", "rag"]
         elif fail_reason == "verification_failed":
-            actions = ["rag"]
+            actions = ["rewrite_query", "expand_query", "rag"]
         else:
-            actions = ["rag"]
+            actions = ["rag", "rewrite_query", "expand_query"]
 
     if _looks_like_external_query(current_query) and "web_search" not in actions:
         actions.append("web_search")
     if _looks_like_structured_db_query(current_query) and "db_search" not in actions:
         actions.append("db_search")
+    if _should_direct_answer(current_query) and "direct_answer" not in actions and not last_tool:
+        actions.insert(0, "direct_answer")
 
     # 过滤掉已经连续执行过的推理动作
     actions = [action for action in actions if action not in trailing_reasoning] or ["rag"]

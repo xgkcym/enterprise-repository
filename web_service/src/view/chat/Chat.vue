@@ -54,6 +54,7 @@ const normalizeMessage = (message) => ({
   role: message.role || "assistant",
   content: message.content || "",
   citations: message.citations || [],
+  report_summary: message.report_summary || null,
   status: message.status || "completed",
   created_at: message.created_at || new Date().toISOString(),
 });
@@ -182,6 +183,13 @@ const handleSendMessage = async (query) => {
         if (event === "message_started") {
           assistantMessageId = data.message_id;
           ensureAssistantMessage(assistantMessageId);
+          messages.value[ensureAssistantMessage(assistantMessageId)].report_summary = {
+            status: "streaming",
+            action: "",
+            reason: "",
+            trace: [],
+            action_history: [],
+          };
           return;
         }
 
@@ -193,7 +201,10 @@ const handleSendMessage = async (query) => {
         }
 
         if (event === "message_completed") {
-          const finalMessage = normalizeMessage(data.message);
+          const finalMessage = normalizeMessage({
+            ...data.message,
+            report_summary: data.report_summary || null,
+          });
           const index = ensureAssistantMessage(finalMessage.message_id);
           messages.value[index] = finalMessage;
           currentSessionId.value = data.session_id || currentSessionId.value;
