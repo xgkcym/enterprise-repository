@@ -136,6 +136,8 @@ def load_pdf(path: str, metadata: DocumentMetadata) -> Sequence[LlamaDocument]:
     documents = []
     current_section = ""
     current_title = ""
+    current_page = 0
+    current_source = metadata.file_type
 
     for page_num, page in tqdm(enumerate(pdf), desc="加载 PDF"):
         blocks = page.get_text("blocks")
@@ -163,21 +165,34 @@ def load_pdf(path: str, metadata: DocumentMetadata) -> Sequence[LlamaDocument]:
                             text=current_section,
                             metadata={
                                 **metadata.dict(),
-                                "page": page_num + 1,
+                                "page": current_page,
                                 "section_title": current_title,
-                                "source": source,
+                                "source": current_source,
                             },
                         )
                     )
                 current_title = text
+                current_page = page_num + 1
+                current_source = source
                 current_section = f"# {text}\n"
             else:
+                if not current_section:
+                    current_page = page_num + 1
+                    current_source = source
                 current_section += text + "\n"
 
     if current_section:
-        metadata.section_title = current_title
-        metadata.source = metadata.file_type
-        documents.append(LlamaDocument(text=current_section, metadata=metadata.dict()))
+        documents.append(
+            LlamaDocument(
+                text=current_section,
+                metadata={
+                    **metadata.dict(),
+                    "page": current_page,
+                    "section_title": current_title,
+                    "source": current_source,
+                },
+            )
+        )
     return documents
 
 
@@ -217,6 +232,14 @@ def load_excel(
                 row_text = ""
             else:
                 row_text += "\n"
+
+        if row_text.strip():
+            doc_meta = {
+                **metadata.dict(),
+                "section_title": header,
+                "sheet_name": sheet_name,
+            }
+            documents.append(LlamaDocument(text=row_text.strip(), metadata=doc_meta))
 
     return documents
 

@@ -173,3 +173,11 @@
 2026-04-08 18:00:11,381 - agent - INFO - [LLM调用成功] 耗时: 6.12s
 2026-04-08 18:00:11,381 - agent - INFO - [tokens]: {'completion_tokens': 146, 'prompt_tokens': 1676, 'total_tokens': 1822, 'completion_tokens_details': None, 'prompt_tokens_details': {'audio_tokens': None, 'cached_tokens': 832}, 'prompt_cache_hit_tokens': 832, 'prompt_cache_miss_tokens': 844}
 2026-04-08 18:06:16,223 - agent - INFO - MongoDB数据库连接成功
+2026-04-08 18:06:43,423 - agent - INFO - [LLM调用成功] 耗时: 3.16s
+2026-04-08 18:06:43,424 - agent - INFO - [tokens]: {'completion_tokens': 61, 'prompt_tokens': 837, 'total_tokens': 898, 'completion_tokens_details': None, 'prompt_tokens_details': {'audio_tokens': None, 'cached_tokens': 640}, 'prompt_cache_hit_tokens': 640, 'prompt_cache_miss_tokens': 197}
+2026-04-08 18:06:48,076 - agent - INFO - [LLM调用成功] 耗时: 4.65s
+2026-04-08 18:06:48,076 - agent - INFO - [tokens]: {'completion_tokens': 120, 'prompt_tokens': 1186, 'total_tokens': 1306, 'completion_tokens_details': None, 'prompt_tokens_details': {'audio_tokens': None, 'cached_tokens': 576}, 'prompt_cache_hit_tokens': 576, 'prompt_cache_miss_tokens': 610}
+2026-04-08 18:06:57,095 - agent - INFO - [LLM调用成功] 耗时: 5.38s
+2026-04-08 18:06:57,096 - agent - INFO - [tokens]: {'completion_tokens': 201, 'prompt_tokens': 1035, 'total_tokens': 1236, 'completion_tokens_details': {'accepted_prediction_tokens': 0, 'audio_tokens': 0, 'reasoning_tokens': 0, 'rejected_prediction_tokens': 0, 'text_tokens': 0, 'image_tokens': 0, 'video_tokens': 0}, 'prompt_tokens_details': {'audio_tokens': 0, 'cached_tokens': 0, 'cache_creation_input_tokens': 0, 'cache_read_input_tokens': 0, 'text_tokens': 0, 'image_tokens': 0, 'video_tokens': 0}}
+2026-04-08 18:06:59,915 - agent - INFO - [LLM调用成功] 耗时: 2.82s
+2026-04-08 18:06:59,916 - agent - INFO - [tokens]: {'completion_tokens': 132, 'prompt_tokens': 1007, 'total_tokens': 1139, 'completion_tokens_details': {'accepted_prediction_tokens': 0, 'audio_tokens': 0, 'reasoning_tokens': 0, 'rejected_prediction_tokens': 0, 'text_tokens': 0, 'image_tokens': 0, 'video_tokens': 0}, 'prompt_tokens_details': {'audio_tokens': 0, 'cached_tokens': 0, 'cache_creation_input_tokens': 0, 'cache_read_input_tokens': 0, 'text_tokens': 0, 'image_tokens': 0, 'video_tokens': 0}}

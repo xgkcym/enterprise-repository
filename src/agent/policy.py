@@ -553,19 +553,20 @@ def should_force_finish(state: State) -> tuple[bool, str | None]:
     # 获取最近的非resolved_query事件和事件名称列表
     recent_events = [event for event in state.action_history if event.name != "resolved_query"]
     recent_names = [event.name for event in recent_events]
-    # 筛选出所有的RAG工具事件
-    rag_events = [event for event in recent_events if event.kind == "tool" and event.name == "rag"]
+    # 筛选出所有的工具事件
+    lasts_tools = [event for event in reversed(recent_events) if event.kind == "tool"]
     last_rag_result = state.last_rag_result
 
-    # 检查1：连续两次RAG失败且失败原因相同
-    if len(rag_events) >= 2:
+
+    # 检查1：连续两次工具失败且失败原因相同
+    if len(lasts_tools) >= 2 and lasts_tools[-1].name == lasts_tools[-2].name:
         last_two_fail_reasons = [
             getattr(event.output, "fail_reason", None)
-            for event in rag_events[-2:]
+            for event in lasts_tools[-2:]
         ]
-        if last_two_fail_reasons[0] and last_two_fail_reasons[0] == last_two_fail_reasons[1]:
+        if last_two_fail_reasons[0] == last_two_fail_reasons[1]:
             if last_two_fail_reasons[0] in {"no_data", "low_recall", "bad_ranking", "tool_error"}:
-                return True, f"repeated_rag_failure:{last_two_fail_reasons[0]}"
+                        return True, f"repeated_{lasts_tools[0].name}_failure:{last_two_fail_reasons[0]}"
 
     # 检查2：在重写和扩展查询后仍然无法获取数据
     if last_rag_result and last_rag_result.fail_reason == "no_data":

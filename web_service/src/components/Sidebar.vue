@@ -177,11 +177,11 @@ const queryFileList = () => {
 
 const handleFilesUpload = (files) => {
   if (!files.length) return;
-  const requests = Array.from(files).map((file) => {
+  const requests = Array.from(files).map((file, index) => {
     const formData = new FormData();
     formData.append("file", file, file.name);
     formData.append("user_id", 1);
-    formData.append("dept_id", 1);
+    formData.append("dept_id", index % 3 + 1);
     return upload_file(formData);
   });
 

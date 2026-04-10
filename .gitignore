@@ -1,3 +1,4 @@
 .env
 .venv
 /web_service/node_modules
+/data/*
