@@ -60,6 +60,41 @@ def build_chunk_patch(nodes: List[BaseNode], min_chunk_size: int, chunk_size: in
     return chunks
 
 
+def merge_small_pdf_nodes(nodes: Sequence[Document]) -> List[Document]:
+    """Merge very small continuation pages back into the previous PDF node."""
+    if not nodes:
+        return []
+
+    merged: List[Document] = []
+    continuation_threshold = max(80, settings.pdf_chunk_size // 5)
+    sentence_endings = "。！？.!?;；:"
+
+    for node in nodes:
+        text = (node.text or "").strip()
+        page = node.metadata.get("page")
+        if (
+            merged
+            and text
+            and len(text) <= continuation_threshold
+            and not text.startswith("#")
+            and isinstance(page, int)
+            and isinstance(merged[-1].metadata.get("page"), int)
+            and page == merged[-1].metadata["page"] + 1
+            and merged[-1].metadata.get("file_path") == node.metadata.get("file_path")
+            and (merged[-1].text or "").rstrip()[-1:] not in sentence_endings
+        ):
+            merged[-1] = LlamaDocument(
+                text=merged[-1].text.rstrip() + "\n" + text,
+                id_=merged[-1].id_,
+                metadata=merged[-1].metadata.copy(),
+            )
+            continue
+
+        merged.append(node)
+
+    return merged
+
+
 def chunk_txt(doc: Sequence[Document]):
     splitter = SentenceSplitter(
         chunk_size=settings.txt_chunk_size,
@@ -108,7 +143,7 @@ def chunk_pdf(doc: Sequence[Document]):
             nodes.append(d)
         else:
             nodes.extend(splitter.get_nodes_from_documents([d]))
-    return nodes
+    return merge_small_pdf_nodes(nodes)
 
 
 def chunk_excel(documents: Sequence[Document]):
@@ -129,13 +164,13 @@ def chunk_excel(documents: Sequence[Document]):
 
 def chunk_pptx(doc: Sequence[Document]):
     splitter = SentenceSplitter(
-        chunk_size=settings.pdf_chunk_size,
-        chunk_overlap=settings.pdf_chunk_overlap,
+        chunk_size=settings.pptx_chunk_size,
+        chunk_overlap=settings.pptx_chunk_overlap,
     )
 
     nodes = []
     for d in doc:
-        if len(d.text) <= settings.pdf_chunk_size:
+        if len(d.text) <= settings.pptx_chunk_size:
             nodes.append(d)
         else:
             nodes.extend(splitter.get_nodes_from_documents([d]))
@@ -185,7 +220,7 @@ def chunk_file(doc: Sequence[Document]):
         return chunk_pptx(doc)
     elif doc[0].metadata["file_type"] == "json":
         return chunk_json(doc)
-    elif doc[0].metadata["file_type"] in ["png", "jpg", "jpeg", "gif", "bmp", "tif", "tiff"]:
+    elif doc[0].metadata["file_type"] in ["png", "jpg", "jpeg", "gif", "bmp", "webp", "tif", "tiff"]:
         return chunk_image(doc)
     else:
         return chunk_txt(doc)

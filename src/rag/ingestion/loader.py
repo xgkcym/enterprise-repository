@@ -7,6 +7,11 @@ import fitz
 import numpy as np
 import pandas as pd
 from docx import Document
+from docx.document import Document as DocxDocument
+from docx.oxml.table import CT_Tbl
+from docx.oxml.text.paragraph import CT_P
+from docx.table import Table
+from docx.text.paragraph import Paragraph
 from llama_index.core.schema import Document as LlamaDocument
 from paddleocr import PaddleOCR
 from pptx import Presentation
@@ -19,10 +24,20 @@ from core.settings import settings
 ocr = PaddleOCR()
 
 
+def iter_docx_blocks(doc: DocxDocument):
+    """Yield paragraphs and tables in their original document order."""
+    for child in doc.element.body.iterchildren():
+        if isinstance(child, CT_P):
+            yield Paragraph(child, doc)
+        elif isinstance(child, CT_Tbl):
+            yield Table(child, doc)
+
+
 def load_txt(path: str, metadata: DocumentMetadata) -> Sequence[LlamaDocument]:
     """Load a plain text file into a single document."""
     with open(path, "r", encoding="utf-8") as f:
         text = f.read()
+    metadata.source = metadata.source or metadata.file_type
     metadata.section_title = ".".join(metadata.file_name.split(".")[:-1])
     return [LlamaDocument(text=text, metadata=metadata.dict())]
 
@@ -34,28 +49,39 @@ def load_docx(file_path: str, metadata: DocumentMetadata) -> Sequence[LlamaDocum
     current_section = ""
     current_title = None
 
-    for para in doc.paragraphs:
-        text = para.text.strip()
-        if not text:
+    for block in iter_docx_blocks(doc):
+        if isinstance(block, Paragraph):
+            text = block.text.strip()
+            if not text:
+                continue
+
+            if block.style and block.style.name.startswith("Heading"):
+                if current_section:
+                    sections.append((current_title, current_section))
+                current_title = text
+                current_section = f"# {text}\n"
+            else:
+                current_section += text + "\n"
             continue
 
-        if para.style.name.startswith("Heading"):
+        if isinstance(block, Table):
+            table_rows = []
+            for row in block.rows:
+                row_data = [cell.text.strip() for cell in row.cells]
+                if any(cell for cell in row_data):
+                    table_rows.append(" | ".join(row_data))
+
+            table_text = "\n".join(table_rows).strip()
+            if not table_text:
+                continue
+
             if current_section:
-                sections.append((current_title, current_section))
-            current_title = text
-            current_section = f"# {text}\n"
-        else:
-            current_section += text + "\n"
+                current_section += table_text + "\n"
+            else:
+                sections.append((current_title, table_text))
 
     if current_section:
         sections.append((current_title, current_section))
-
-    for table in doc.tables:
-        table_text = []
-        for row in table.rows:
-            row_data = [cell.text.strip() for cell in row.cells]
-            table_text.append(" | ".join(row_data))
-        sections.append((current_title, "\n".join(table_text)))
 
     documents = []
     for title, section in sections:
@@ -80,7 +106,6 @@ def load_markdown(path: str, metadata: DocumentMetadata) -> Sequence[LlamaDocume
 
     sections = []
     parts = re.split(r'(?=\n#{1,6} )', text)
-    metadata.source = metadata.file_type
 
     for part in parts:
         part = part.strip()
@@ -123,21 +148,25 @@ def preprocess_image(img: np.ndarray) -> np.ndarray:
 
 def extract_pdf_title(text: str) -> bool:
     """Use simple heuristics to detect PDF section titles."""
-    if len(text) < 40 and re.match(r"^[0-9一二三四五六七八九十.、]+", text):
+    text = re.sub(r"\s+", " ", text).strip()
+    if not text:
+        return False
+    # Bias toward citation correctness over aggressive title detection:
+    # sentence-like fragments are treated as body text, not new sections.
+    if re.search(r"[，,。；;：:！？!?]", text):
+        return False
+    if len(text) < 30 and re.match(r"^[0-9一二三四五六七八九十]+(?:\.[0-9]+)*[.、]?\s*\S+$", text):
         return True
-    if len(text) < 20 and text.isupper():
+    if len(text) < 15 and text.isupper() and re.search(r"[A-Z]", text):
         return True
     return False
 
 
 def load_pdf(path: str, metadata: DocumentMetadata) -> Sequence[LlamaDocument]:
-    """Load a PDF file, falling back to OCR when text extraction is weak."""
+    """Load a PDF file page by page, falling back to OCR when text extraction is weak."""
     pdf = fitz.open(path)
     documents = []
-    current_section = ""
     current_title = ""
-    current_page = 0
-    current_source = metadata.file_type
 
     for page_num, page in tqdm(enumerate(pdf), desc="加载 PDF"):
         blocks = page.get_text("blocks")
@@ -150,49 +179,41 @@ def load_pdf(path: str, metadata: DocumentMetadata) -> Sequence[LlamaDocument]:
             blocks = [(0, 0, 0, 0, text, 0, 0)]
             source = "ocr"
 
+        page_texts = []
+        page_title = ""
         for block in blocks:
             text = block[4].strip()
             if not text:
                 continue
-            text = text.replace("\n", " ")
+            text = text.replace("\n", " ").strip()
             if len(text) < 5:
                 continue
 
-            if extract_pdf_title(text):
-                if current_section:
-                    documents.append(
-                        LlamaDocument(
-                            text=current_section,
-                            metadata={
-                                **metadata.dict(),
-                                "page": current_page,
-                                "section_title": current_title,
-                                "source": current_source,
-                            },
-                        )
-                    )
-                current_title = text
-                current_page = page_num + 1
-                current_source = source
-                current_section = f"# {text}\n"
+            if not page_title and extract_pdf_title(text):
+                page_title = text
+                page_texts.append(f"# {text}")
             else:
-                if not current_section:
-                    current_page = page_num + 1
-                    current_source = source
-                current_section += text + "\n"
+                page_texts.append(text)
 
-    if current_section:
+        page_content = "\n".join(page_texts).strip()
+        if not page_content:
+            continue
+
+        if page_title:
+            current_title = page_title
+
         documents.append(
             LlamaDocument(
-                text=current_section,
+                text=page_content,
                 metadata={
                     **metadata.dict(),
-                    "page": current_page,
-                    "section_title": current_title,
-                    "source": current_source,
+                    "page": page_num + 1,
+                    "section_title": page_title or current_title,
+                    "source": source,
                 },
             )
         )
+
     return documents
 
 
@@ -240,6 +261,52 @@ def load_excel(
                 "sheet_name": sheet_name,
             }
             documents.append(LlamaDocument(text=row_text.strip(), metadata=doc_meta))
+
+    return documents
+
+
+def load_csv(
+    file_path: str,
+    metadata: DocumentMetadata,
+    header_mode=settings.excel_header_mode,
+) -> Sequence[LlamaDocument]:
+    """Load a CSV file using the same chunking strategy as Excel."""
+    documents = []
+    df = pd.read_csv(file_path, dtype=str)
+    df.fillna("", inplace=True)
+    header = ""
+    row_text = ""
+    sheet_name = "csv"
+
+    for row_idx, row in df.iterrows():
+        row_text += " | ".join([str(cell) for cell in row])
+        if not row_text.strip():
+            continue
+
+        if row_idx == 0 and header_mode is not None:
+            if header_mode == "row":
+                header = row_text
+            row_text = ""
+            continue
+
+        if len(row_text) >= settings.excel_min_chunk_size:
+            doc_meta = {
+                **metadata.dict(),
+                "section_title": header,
+                "sheet_name": sheet_name,
+            }
+            documents.append(LlamaDocument(text=row_text, metadata=doc_meta))
+            row_text = ""
+        else:
+            row_text += "\n"
+
+    if row_text.strip():
+        doc_meta = {
+            **metadata.dict(),
+            "section_title": header,
+            "sheet_name": sheet_name,
+        }
+        documents.append(LlamaDocument(text=row_text.strip(), metadata=doc_meta))
 
     return documents
 
@@ -331,13 +398,17 @@ def load_file(path: str, metadata: DocumentMetadata) -> Sequence[LlamaDocument]:
         return load_markdown(path, metadata)
     if metadata.file_type in ["pdf"]:
         return load_pdf(path, metadata)
-    if metadata.file_type in ["xls", "xlsx", "csv"]:
+    if metadata.file_type in ["xls", "xlsx"]:
         metadata.source = "excel"
         return load_excel(path, metadata)
-    if metadata.file_type in ["ppt", "pptx"]:
-        metadata.source = "ppt"
+    if metadata.file_type in ["csv"]:
+        metadata.source = "excel"
+        return load_csv(path, metadata)
+    if metadata.file_type in ["pptx"]:
+        metadata.source = "pptx"
         return load_pptx(path, metadata)
     if metadata.file_type in ["json"]:
+        metadata.source = "json"
         return load_json(path, metadata)
     if metadata.file_type in ["jpeg", "png", "jpg", "bmp", "webp", "tiff", "tif"]:
         return load_image(path, metadata)
