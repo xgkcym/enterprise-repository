@@ -2,6 +2,7 @@ import time
 
 from langchain_core.messages import HumanMessage
 
+from src.agent.profile_utils import extract_preferred_topics
 from src.agent.policy import (
     _looks_like_external_query,
     _looks_like_structured_db_query,
@@ -17,6 +18,20 @@ from src.types.event_type import ReasoningEvent
 from src.types.final_answer_type import FinalAnswerResult
 
 
+def _web_search_allowed(state: State) -> bool:
+    profile = state.user_profile or {}
+    return bool(profile.get("allow_web_search", False))
+
+
+def _preferred_language(state: State) -> str:
+    profile = state.user_profile or {}
+    return str(profile.get("preferred_language") or "zh-CN").strip() or "zh-CN"
+
+
+def _preferred_topics(state: State) -> list[str]:
+    return extract_preferred_topics(state.user_profile or {})
+
+
 def _build_direct_answer_prompt(state: State) -> str:
     chat_history = "\n".join(state.chat_history[-8:]) if state.chat_history else "None"
     effective_query = state.working_query or state.resolved_query or state.query or ""
@@ -25,6 +40,8 @@ def _build_direct_answer_prompt(state: State) -> str:
         query=effective_query,
         chat_history=chat_history,
         output_level=state.output_level,
+        preferred_language=_preferred_language(state),
+        preferred_topics=", ".join(_preferred_topics(state)) or "None",
     ).strip()
 
 
@@ -88,7 +105,7 @@ def _select_fallback_action(state: State) -> tuple[str, str]:
     effective_query = (state.working_query or state.resolved_query or state.query or "").strip()
     if _looks_like_structured_db_query(effective_query):
         return "db_search", "direct_answer_failed_fallback_to_db_search"
-    if _looks_like_external_query(effective_query):
+    if _web_search_allowed(state) and _looks_like_external_query(effective_query):
         return "web_search", "direct_answer_failed_fallback_to_web_search"
     if needs_rewrite_first(effective_query):
         return "rewrite_query", "direct_answer_failed_fallback_to_rewrite"

@@ -1,6 +1,7 @@
 import time
 from typing import Any
 
+from src.agent.profile_utils import build_topic_guidance_queries, extract_preferred_topics
 from src.agent.policy import build_retrieval_plan
 from src.nodes.helpers import build_state_patch, create_event, finalize_event, get_next_attempt
 from src.tools.rag_tool import rag_tool
@@ -151,8 +152,18 @@ def rag_node(state: State):
     # 填充查询相关字段
     new_input.query = effective_query
     new_input.rewritten_query = state.rewrite_query
-    new_input.expand_query = state.expand_query
+    new_input.expand_query = list(state.expand_query or [])
     new_input.decompose_query = state.decompose_query
+
+    preferred_topics = extract_preferred_topics(state.user_profile or {})
+    topic_guidance_queries = build_topic_guidance_queries(
+        effective_query,
+        preferred_topics,
+        max_queries=2,
+    )
+    for query in topic_guidance_queries:
+        if query not in new_input.expand_query:
+            new_input.expand_query.append(query)
 
     # 构建访问过滤器并合并到现有过滤条件
     access_filters, access_diagnostics, access_denied = build_access_filters(state)
@@ -200,6 +211,10 @@ def rag_node(state: State):
     # 添加诊断信息
     tool_result.diagnostics.append(f"policy:{retrieval_plan.strategy_reason}")
     tool_result.diagnostics.extend(access_diagnostics)
+    if preferred_topics:
+        tool_result.diagnostics.append(f"preferred_topics_available={len(preferred_topics)}")
+    if topic_guidance_queries:
+        tool_result.diagnostics.append(f"preferred_topic_guidance_queries={len(topic_guidance_queries)}")
 
     # 完成工具事件设置
     new_tool.attempt = get_next_attempt(state.action_history, "rag")

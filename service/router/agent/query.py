@@ -13,6 +13,7 @@ from service.models.role_department import RoleDepartmentModel
 from service.models.users import UserModel
 from service.router.agent.index import agent_router
 from service.utils.chat_store import chat_store
+from service.utils.user_profile import build_user_profile_payload, get_or_create_user_profile
 from src.agent.runner import build_run_report, run_agent
 
 
@@ -23,18 +24,6 @@ class AgentQueryRequest(BaseModel):
         default=None,
         description="Answer verbosity: concise|standard|detailed",
     )
-
-
-def build_user_profile(current_user: UserModel, allowed_department_ids: list[int]) -> dict[str, Any]:
-    return {
-        "user_id": current_user.id,
-        "username": current_user.username,
-        "dept_id": current_user.dept_id,
-        "department_id": current_user.dept_id,
-        "role_id": current_user.role_id,
-        "allowed_department_ids": allowed_department_ids,
-    }
-
 
 @agent_router.post("/query")
 async def query_agent(
@@ -59,7 +48,12 @@ async def query_agent(
     allowed_department_ids = role_dept_result.scalars().all()
 
     # 构建用户档案信息
-    user_profile = build_user_profile(current_user, allowed_department_ids)
+    profile = await get_or_create_user_profile(session=session, current_user=current_user)
+    user_profile = build_user_profile_payload(
+        current_user=current_user,
+        allowed_department_ids=allowed_department_ids,
+        profile=profile,
+    )
 
     # 初始化聊天历史记录
     chat_history: list[str] = []
@@ -80,7 +74,7 @@ async def query_agent(
         chat_history=chat_history,
         user_profile=user_profile,
         max_steps=settings.agent_max_steps,
-        output_level=payload.output_level,
+        output_level=payload.output_level or user_profile.get("answer_style"),
     )
 
     # 返回处理结果

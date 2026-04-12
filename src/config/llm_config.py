@@ -6,12 +6,17 @@ from langchain_core.language_models import BaseChatModel
 from pydantic import BaseModel
 
 from core.settings import settings
-from src.models.llm import chatgpt_llm
 from utils.logger_handler import logger
 
 
 class LLMService:
     _usage_records: ContextVar[list[dict[str, Any]] | None] = ContextVar("llm_usage_records", default=None)
+
+    @staticmethod
+    def _load_fallback_llm() -> BaseChatModel:
+        from src.models.llm import chatgpt_llm
+
+        return chatgpt_llm
 
     @staticmethod
     def _resolve_model_name(llm: BaseChatModel) -> str:
@@ -166,7 +171,7 @@ class LLMService:
                 time.sleep(2 ** i)
 
         if not fallback_llm:
-            fallback_llm = chatgpt_llm
+            fallback_llm = LLMService._load_fallback_llm()
 
         fallback_model_name = LLMService._resolve_model_name(fallback_llm)
         if schema:

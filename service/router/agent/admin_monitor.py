@@ -257,6 +257,8 @@ def _serialize_run(doc: dict[str, Any]) -> dict[str, Any]:
         "llm_call_count": int(_safe_number(llm_usage.get("call_count"), 0)),
         "estimated_cost_usd": float(_safe_number(llm_usage.get("estimated_cost_usd"), 0.0)),
         "models": llm_usage.get("models") or [],
+        "user_profile": report.get("user_profile") or None,
+        "preferred_topics_usage": report.get("preferred_topics_usage") or None,
         "rewrite_query": report.get("rewrite_query") or "",
         "expand_query": report.get("expand_query") or [],
         "decompose_query": report.get("decompose_query") or [],

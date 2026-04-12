@@ -16,7 +16,12 @@ def rewrite_query_node(state:State):
         input_data={"query": query},
     )
     if len(query) > 10:
-        rewritten = rewrite_query_tool(deepseek_llm,state.working_query,state.chat_history)
+        rewritten = rewrite_query_tool(
+            deepseek_llm,
+            state.working_query,
+            state.chat_history,
+            state.user_profile,
+        )
     else:
         rewritten = RewriteResult(
             answer=query,

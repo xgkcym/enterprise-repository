@@ -10,3 +10,14 @@ docker exec -it elasticsearch /bin/bash
 docker restart elasticsearch
 
 Query Routing（是否用RAG / 是否走WebSearch）
+
+
+docker run -d --name milvus --restart=unless-stopped -p 19530:19530 -p 9091:9091 -v milvus_data:/var/lib/milvus milvusdb/milvus:v2.6.13
+
+## Tests
+
+Run the `preferred_topics` backend unit tests locally:
+
+```bash
+python -m unittest tests.test_preferred_topics
+```

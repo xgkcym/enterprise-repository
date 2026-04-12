@@ -7,7 +7,6 @@ from typing import Any
 from uuid import uuid4
 
 from core.settings import settings
-from src.agent.graph import graph
 from src.config.llm_config import LLMService
 from src.types.agent_state import State
 
@@ -116,6 +115,13 @@ def run_agent(
     output_level: str | None = None,
 ) -> State:
     """Run the agent graph and return the final state."""
+    from src.agent.graph import graph
+
+    resolved_output_level = (
+        output_level
+        or (user_profile or {}).get("answer_style")
+        or settings.agent_output_level
+    )
     initial_state = State(
         query=query,
         run_id=str(uuid4()),
@@ -124,7 +130,7 @@ def run_agent(
         user_profile=user_profile,
         chat_history=chat_history or [],
         max_steps=max_steps,
-        output_level=output_level or settings.agent_output_level,
+        output_level=resolved_output_level,
     )
     usage_token = LLMService.start_usage_collection()
     start = time.time()
@@ -228,6 +234,62 @@ def summarize_action_history(state: State) -> list[dict[str, Any]]:
     return rows
 
 
+def _summarize_user_profile(profile: dict[str, Any] | None) -> dict[str, Any] | None:
+    if not profile:
+        return None
+
+    return {
+        "user_id": profile.get("user_id"),
+        "username": profile.get("username"),
+        "department_id": profile.get("department_id") or profile.get("dept_id"),
+        "role_id": profile.get("role_id"),
+        "allowed_department_ids": list(profile.get("allowed_department_ids") or []),
+        "answer_style": profile.get("answer_style"),
+        "preferred_language": profile.get("preferred_language"),
+        "preferred_topics": list(profile.get("preferred_topics") or []),
+        "prefers_citations": bool(profile.get("prefers_citations", True)),
+        "allow_web_search": bool(profile.get("allow_web_search", False)),
+    }
+
+
+def _extract_preferred_topics_usage(state: State) -> dict[str, Any]:
+    profile = state.user_profile or {}
+    available_topics = list(profile.get("preferred_topics") or [])
+    applied_steps: list[str] = []
+    guidance_query_count = 0
+    matched_diagnostics: list[str] = []
+
+    for item in state.action_history:
+        output = getattr(item, "output", None)
+        diagnostics = list(getattr(output, "diagnostics", []) or [])
+        topic_diagnostics = [
+            diag for diag in diagnostics
+            if isinstance(diag, str) and ("preferred_topics" in diag or "preferred_topic" in diag)
+        ]
+        if not topic_diagnostics:
+            continue
+
+        if item.name not in applied_steps:
+            applied_steps.append(item.name)
+        matched_diagnostics.extend(topic_diagnostics)
+
+        for diag in topic_diagnostics:
+            if diag.startswith("preferred_topic_guidance_queries="):
+                _, _, raw_value = diag.partition("=")
+                try:
+                    guidance_query_count = max(guidance_query_count, int(raw_value or "0"))
+                except ValueError:
+                    continue
+
+    return {
+        "available_topics": available_topics,
+        "used": bool(applied_steps),
+        "applied_steps": applied_steps,
+        "guidance_query_count": guidance_query_count,
+        "matched_diagnostics": matched_diagnostics,
+    }
+
+
 def build_run_report(state: State) -> dict[str, Any]:
     last_rag_result = state.last_rag_result
     raw_citations, citation_labels, citation_details = _build_citation_details(last_rag_result) if last_rag_result else ([], [], [])
@@ -258,6 +320,8 @@ def build_run_report(state: State) -> dict[str, Any]:
         "llm_usage": state.llm_usage,
         "working_memory": state.working_memory,
         "short_term_memory": state.short_term_memory,
+        "user_profile": _summarize_user_profile(state.user_profile),
+        "preferred_topics_usage": _extract_preferred_topics_usage(state),
         "diagnostics": state.diagnostics,
         "rewrite_query": state.rewrite_query,
         "expand_query": state.expand_query,

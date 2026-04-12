@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="font-inter bg-gray-50 text-dark antialiased">
     <div class="flex h-screen overflow-hidden">
       <Sidebar
@@ -12,11 +12,14 @@
         :messages="messages"
         :is-login="isLogin"
         :user-info="userInfo"
+        :user-profile="userProfile"
         :is-streaming="isStreaming"
+        :is-saving-profile="isSavingProfile"
         :session-title="currentSessionTitle"
         :output-level="outputLevel"
         @login-success="handleLoginSuccess"
         @logout="handleLogout"
+        @save-profile="handleProfileSave"
         @update:output-level="handleOutputLevelChange"
         @send-message="handleSendMessage"
       />
@@ -26,16 +29,29 @@
 
 <script setup>
 import { computed, onMounted, ref } from "vue";
+import { ElMessage } from "element-plus";
 
 import { delete_chat_session, get_chat_messages, list_chat_sessions, stream_agent_chat } from "../../api/chat";
+import { get_user_profile, update_user_profile } from "../../api/user";
 import ChatWindow from "../../components/ChatWindow.vue";
 import Sidebar from "../../components/Sidebar.vue";
+
+const defaultUserProfile = () => ({
+  answer_style: "standard",
+  preferred_language: "zh-CN",
+  preferred_topics: [],
+  prefers_citations: true,
+  allow_web_search: false,
+  profile_notes: "",
+});
 
 const sessions = ref([]);
 const currentSessionId = ref("");
 const messages = ref([]);
 const isStreaming = ref(false);
+const isSavingProfile = ref(false);
 const isLogin = ref(!!localStorage.getItem("token"));
+const userProfile = ref(defaultUserProfile());
 const outputLevel = ref(localStorage.getItem("agentOutputLevel") || "standard");
 const userInfo = ref(
   localStorage.getItem("userInfo")
@@ -45,7 +61,7 @@ const userInfo = ref(
 
 const currentSessionTitle = computed(() => {
   const current = sessions.value.find((item) => item.session_id === currentSessionId.value);
-  return current?.title || "新会话";
+  return current?.title || "New Session";
 });
 
 const normalizeMessage = (message) => ({
@@ -58,6 +74,25 @@ const normalizeMessage = (message) => ({
   status: message.status || "completed",
   created_at: message.created_at || new Date().toISOString(),
 });
+
+const loadUserProfile = async () => {
+  if (!isLogin.value) {
+    userProfile.value = defaultUserProfile();
+    return;
+  }
+
+  const res = await get_user_profile();
+  const profile = res.data || defaultUserProfile();
+  userProfile.value = {
+    ...defaultUserProfile(),
+    ...profile,
+    preferred_topics: Array.isArray(profile.preferred_topics) ? profile.preferred_topics : [],
+  };
+
+  if (!localStorage.getItem("agentOutputLevel")) {
+    outputLevel.value = userProfile.value.answer_style || "standard";
+  }
+};
 
 const upsertSession = (session) => {
   if (!session?.session_id) return;
@@ -125,12 +160,14 @@ const handleDeleteSession = async (sessionId) => {
 const handleLoginSuccess = async ({ user }) => {
   isLogin.value = true;
   userInfo.value = user || { username: "" };
+  await loadUserProfile();
   await loadSessions();
 };
 
 const handleLogout = () => {
   isLogin.value = false;
   userInfo.value = { username: "" };
+  userProfile.value = defaultUserProfile();
   sessions.value = [];
   handleNewChat();
 };
@@ -138,6 +175,24 @@ const handleLogout = () => {
 const handleOutputLevelChange = (value) => {
   outputLevel.value = value || "standard";
   localStorage.setItem("agentOutputLevel", outputLevel.value);
+};
+
+const handleProfileSave = async (payload) => {
+  isSavingProfile.value = true;
+  try {
+    const res = await update_user_profile(payload);
+    const profile = res.data || payload;
+    userProfile.value = {
+      ...defaultUserProfile(),
+      ...profile,
+      preferred_topics: Array.isArray(profile.preferred_topics) ? profile.preferred_topics : [],
+    };
+    outputLevel.value = userProfile.value.answer_style || "standard";
+    localStorage.setItem("agentOutputLevel", outputLevel.value);
+    ElMessage.success("Profile updated");
+  } finally {
+    isSavingProfile.value = false;
+  }
 };
 
 const ensureAssistantMessage = (messageId) => {
@@ -187,6 +242,7 @@ const handleSendMessage = async (query) => {
             status: "streaming",
             action: "",
             reason: "",
+            output_level: data.output_level || outputLevel.value,
             trace: [],
             action_history: [],
           };
@@ -214,7 +270,7 @@ const handleSendMessage = async (query) => {
         if (event === "error") {
           const targetId = assistantMessageId || `assistant-error-${Date.now()}`;
           const index = ensureAssistantMessage(targetId);
-          messages.value[index].content = data.message || "对话失败，请稍后重试。";
+          messages.value[index].content = data.message || "Request failed. Please retry.";
           messages.value[index].status = "failed";
         }
       },
@@ -227,6 +283,7 @@ const handleSendMessage = async (query) => {
 
 onMounted(async () => {
   if (isLogin.value) {
+    await loadUserProfile();
     await loadSessions();
   }
 });

@@ -15,7 +15,12 @@ def expand_query_node(state:State):
         input_data={"query":state.working_query or  state.query},
         max_attempt=1,
     )
-    expand_query = expand_query_tool(deepseek_llm,state.working_query,state.chat_history)
+    expand_query = expand_query_tool(
+        deepseek_llm,
+        state.working_query,
+        state.chat_history,
+        state.user_profile,
+    )
     event.attempt = get_next_attempt(state.action_history, "expand_query")
     event = finalize_event(event, expand_query, start_time)
     return build_state_patch(

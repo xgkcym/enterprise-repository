@@ -14,7 +14,12 @@ class ResolveQueryNodeResult(BaseNodeResult):
 
 def resolved_query_node(state: State):
     start_time = time.time()
-    resolved = resolved_query_tool(deepseek_llm, state.query or "", state.chat_history)
+    resolved = resolved_query_tool(
+        deepseek_llm,
+        state.query or "",
+        state.chat_history,
+        state.user_profile,
+    )
     query = (resolved.answer or state.query or "").strip()
     event = create_event(
         ReasoningEvent,

@@ -7,3 +7,18 @@ export const user_login = (data) => {
     data,
   });
 };
+
+export const get_user_profile = () => {
+  return request({
+    url: "/user/profile",
+    method: "get",
+  });
+};
+
+export const update_user_profile = (data) => {
+  return request({
+    url: "/user/profile",
+    method: "put",
+    data,
+  });
+};

@@ -2,6 +2,7 @@ import time
 
 from langchain_core.messages import HumanMessage
 
+from src.agent.profile_utils import extract_preferred_topics
 from src.config.llm_config import LLMService
 from src.models.llm import chatgpt_llm
 from src.nodes.helpers import build_state_patch, create_event, finalize_event
@@ -9,6 +10,20 @@ from src.prompts.agent.finalize_prompt import FINALIZE_PROMPT
 from src.types.agent_state import State
 from src.types.event_type import ReasoningEvent
 from src.types.final_answer_type import FinalAnswerResult
+
+
+def _prefers_citations(state: State) -> bool:
+    profile = state.user_profile or {}
+    return bool(profile.get("prefers_citations", True))
+
+
+def _preferred_language(state: State) -> str:
+    profile = state.user_profile or {}
+    return str(profile.get("preferred_language") or "zh-CN").strip() or "zh-CN"
+
+
+def _preferred_topics(state: State) -> list[str]:
+    return extract_preferred_topics(state.user_profile or {})
 
 
 def _normalize_citations(raw_citations, allowed_citations: list[str]) -> list[str]:
@@ -69,7 +84,7 @@ def _build_fallback_final_answer(state: State) -> FinalAnswerResult:
     else:
         answer = "当前证据不足，暂时无法稳定回答该问题。"
 
-    return FinalAnswerResult(
+    result = FinalAnswerResult(
         success=bool(answer) and is_sufficient,
         answer=answer,
         citations=citations,
@@ -77,6 +92,9 @@ def _build_fallback_final_answer(state: State) -> FinalAnswerResult:
         fail_reason=fail_reason,
         diagnostics=["finalize_fallback_used"],
     )
+    if not _prefers_citations(state):
+        result.citations = []
+    return result
 
 
 def finalize_node(state: State):
@@ -113,6 +131,9 @@ def finalize_node(state: State):
         sub_query_context=_build_sub_query_context(state),
         available_citations=", ".join(citations) if citations else "None",
         output_level=state.output_level,
+        preferred_language=_preferred_language(state),
+        prefers_citations="yes" if _prefers_citations(state) else "no",
+        preferred_topics=", ".join(_preferred_topics(state)) or "None",
     )
 
     try:
@@ -133,6 +154,9 @@ def finalize_node(state: State):
             result.diagnostics = ["finalize_llm_completed"]
     except Exception:
         result = _build_fallback_final_answer(state)
+
+    if not _prefers_citations(state):
+        result.citations = []
 
     event = finalize_event(event, result, start_time)
 

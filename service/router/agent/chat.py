@@ -18,6 +18,7 @@ from service.models.role_department import RoleDepartmentModel
 from service.models.users import UserModel
 from service.router.agent.index import agent_router
 from service.utils.chat_store import chat_store
+from service.utils.user_profile import build_user_profile_payload, get_or_create_user_profile
 from src.agent.runner import build_run_report, run_agent
 
 
@@ -28,18 +29,6 @@ class ChatStreamRequest(BaseModel):
         default=None,
         description="Answer verbosity: concise|standard|detailed",
     )
-
-
-def build_user_profile(current_user: UserModel, allowed_department_ids: list[int]) -> dict:
-    return {
-        "user_id": current_user.id,
-        "username": current_user.username,
-        "dept_id": current_user.dept_id,
-        "department_id": current_user.dept_id,
-        "role_id": current_user.role_id,
-        "allowed_department_ids": allowed_department_ids,
-    }
-
 
 def _chunk_text(text: str, chunk_size: int = 16) -> list[str]:
     value = text or ""
@@ -102,6 +91,10 @@ async def get_chat_session_messages(
                     "fail_reason": report.get("fail_reason"),
                     "action": report.get("action"),
                     "reason": report.get("reason"),
+                    "output_level": report.get("output_level"),
+                    "user_profile": report.get("user_profile"),
+                    "preferred_topics_usage": report.get("preferred_topics_usage"),
+                    "citation_details": report.get("citation_details") or [],
                     "trace": report.get("trace") or [],
                     "action_history": report.get("action_history") or [],
                 }
@@ -138,7 +131,12 @@ async def stream_chat(
         raise HTTPException(status_code=400, detail="Query is required")
 
     allowed_department_ids = await _build_allowed_department_ids(current_user=current_user, session=session)
-    user_profile = build_user_profile(current_user, allowed_department_ids)
+    profile = await get_or_create_user_profile(session=session, current_user=current_user)
+    user_profile = build_user_profile_payload(
+        current_user=current_user,
+        allowed_department_ids=allowed_department_ids,
+        profile=profile,
+    )
     current_session_id = payload.session_id
 
     if current_session_id:
@@ -184,6 +182,7 @@ async def stream_chat(
                     "session_id": current_session_id,
                     "role": "assistant",
                     "message_id": assistant_message_id,
+                    "output_level": payload.output_level or user_profile.get("answer_style") or settings.agent_output_level,
                 },
             )
 
@@ -195,7 +194,7 @@ async def stream_chat(
                 chat_history=chat_history,
                 user_profile=user_profile,
                 max_steps=settings.agent_max_steps,
-                output_level=payload.output_level,
+                output_level=payload.output_level or user_profile.get("answer_style"),
             )
             report = build_run_report(final_state)
             answer = (report.get("answer") or "").strip()
@@ -250,7 +249,11 @@ async def stream_chat(
                         "fail_reason": report.get("fail_reason"),
                         "action": report.get("action"),
                         "reason": report.get("reason"),
+                        "output_level": report.get("output_level"),
+                        "user_profile": report.get("user_profile"),
+                        "preferred_topics_usage": report.get("preferred_topics_usage"),
                         "citations": citations,
+                        "citation_details": report.get("citation_details") or [],
                         "trace": report.get("trace") or [],
                         "action_history": report.get("action_history") or [],
                     },

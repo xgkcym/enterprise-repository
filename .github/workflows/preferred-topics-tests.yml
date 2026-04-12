@@ -1,0 +1,43 @@
+name: Preferred Topics Tests
+
+on:
+  push:
+    paths:
+      - ".github/workflows/preferred-topics-tests.yml"
+      - "core/**"
+      - "src/**"
+      - "tests/test_preferred_topics.py"
+      - "requirements.txt"
+  pull_request:
+    paths:
+      - ".github/workflows/preferred-topics-tests.yml"
+      - "core/**"
+      - "src/**"
+      - "tests/test_preferred_topics.py"
+      - "requirements.txt"
+
+jobs:
+  backend-unit-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install unit test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install \
+            langchain-core \
+            pydantic \
+            pydantic-settings \
+            python-dotenv
+
+      - name: Run preferred_topics unit tests
+        run: python -m unittest tests.test_preferred_topics
