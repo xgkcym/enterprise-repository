@@ -30,14 +30,27 @@ class MilvusMemoryStore(BaseMemoryStore):
 
         try:
             from pymilvus import MilvusClient
-        except Exception as exc:  # pragma: no cover - dependency may be absent in dev env
+        except Exception as exc:  # pragma: no cover
             self._import_error = str(exc)
             return None
 
         token = settings.milvus_token or None
-        self._client = MilvusClient(uri=settings.milvus_uri, token=token, db_name=settings.milvus_db_name)
+        self._client = MilvusClient(
+            uri=self._normalized_uri(settings.milvus_uri),
+            token=token,
+            db_name=settings.milvus_db_name,
+        )
         self._ensure_collection()
         return self._client
+
+    @staticmethod
+    def _normalized_uri(uri: str) -> str:
+        raw = (uri or "").strip()
+        if not raw:
+            return raw
+        if "://" in raw:
+            return raw
+        return f"http://{raw}"
 
     def _ensure_collection(self) -> None:
         client = self._client
@@ -115,11 +128,37 @@ class MilvusMemoryStore(BaseMemoryStore):
         except (TypeError, json.JSONDecodeError):
             return default
 
+    @staticmethod
+    def _output_fields(*, include_vector: bool = False) -> list[str]:
+        fields = [
+            "memory_id",
+            "user_id",
+            "session_id",
+            "scope",
+            "memory_type",
+            "content",
+            "summary",
+            "tags_json",
+            "source",
+            "dedupe_key",
+            "created_at",
+            "updated_at",
+            "last_accessed_at",
+            "expires_at",
+            "is_active",
+            "importance",
+            "confidence",
+            "metadata_json",
+        ]
+        if include_vector:
+            fields.append("vector")
+        return fields
+
     def _payload_from_record(self, record: MemoryRecord, vector: list[float]) -> dict[str, Any]:
         return {
             "memory_id": record.memory_id,
             "user_id": record.user_id,
-            "session_id": record.session_id or "",
+            "session_id": record.session_id,
             "scope": record.scope,
             "memory_type": record.memory_type,
             "content": record.content,
@@ -129,14 +168,25 @@ class MilvusMemoryStore(BaseMemoryStore):
             "dedupe_key": record.dedupe_key,
             "created_at": record.created_at,
             "updated_at": record.updated_at,
-            "last_accessed_at": record.last_accessed_at or "",
-            "expires_at": record.expires_at or "",
+            "last_accessed_at": record.last_accessed_at,
+            "expires_at": record.expires_at,
             "is_active": record.is_active,
             "importance": float(record.importance),
             "confidence": float(record.confidence),
             "metadata_json": json.dumps(record.metadata, ensure_ascii=False),
             "vector": vector,
         }
+
+    def _upsert_payloads(self, payloads: list[dict[str, Any]], *, flush: bool) -> None:
+        client = self._ensure_client()
+        if client is None:
+            raise RuntimeError("Milvus memory store is not available")
+        if not payloads:
+            return
+
+        client.upsert(collection_name=settings.milvus_collection_name, data=payloads)
+        if flush:
+            client.flush(collection_name=settings.milvus_collection_name)
 
     def _record_from_hit(self, hit: dict[str, Any]) -> MemoryRecord:
         entity = hit.get("entity") or hit
@@ -177,26 +227,8 @@ class MilvusMemoryStore(BaseMemoryStore):
             anns_field="vector",
             filter=self._build_filter(query),
             limit=query.top_k,
-            output_fields=[
-                "memory_id",
-                "user_id",
-                "session_id",
-                "scope",
-                "memory_type",
-                "content",
-                "summary",
-                "tags_json",
-                "source",
-                "dedupe_key",
-                "created_at",
-                "updated_at",
-                "last_accessed_at",
-                "expires_at",
-                "is_active",
-                "importance",
-                "confidence",
-                "metadata_json",
-            ],
+            consistency_level=settings.milvus_consistency_level,
+            output_fields=self._output_fields(),
         )
 
         hits = results[0] if results and isinstance(results[0], list) else results
@@ -209,13 +241,17 @@ class MilvusMemoryStore(BaseMemoryStore):
         return memories
 
     def upsert(self, record: MemoryRecord, vector: list[float]) -> str:
-        client = self._ensure_client()
-        if client is None:
-            raise RuntimeError("Milvus memory store is not available")
+        return self.upsert_many([record], [vector])[0]
 
-        payload = self._payload_from_record(record, vector)
-        client.upsert(collection_name=settings.milvus_collection_name, data=[payload])
-        return record.memory_id
+    def upsert_many(self, records: list[MemoryRecord], vectors: list[list[float]]) -> list[str]:
+        if len(records) != len(vectors):
+            raise ValueError("records and vectors must have the same length")
+        if not records:
+            return []
+
+        payloads = [self._payload_from_record(record, vector) for record, vector in zip(records, vectors)]
+        self._upsert_payloads(payloads, flush=True)
+        return [record.memory_id for record in records]
 
     def get_by_dedupe_key(self, *, user_id: str, dedupe_key: str) -> MemoryRecord | None:
         client = self._ensure_client()
@@ -226,26 +262,8 @@ class MilvusMemoryStore(BaseMemoryStore):
         results = client.query(
             collection_name=settings.milvus_collection_name,
             filter=expr,
-            output_fields=[
-                "memory_id",
-                "user_id",
-                "session_id",
-                "scope",
-                "memory_type",
-                "content",
-                "summary",
-                "tags_json",
-                "source",
-                "dedupe_key",
-                "created_at",
-                "updated_at",
-                "last_accessed_at",
-                "expires_at",
-                "is_active",
-                "importance",
-                "confidence",
-                "metadata_json",
-            ],
+            consistency_level=settings.milvus_consistency_level,
+            output_fields=self._output_fields(),
         )
         if not results:
             return None
@@ -256,51 +274,36 @@ class MilvusMemoryStore(BaseMemoryStore):
         if client is None or not memory_ids:
             return 0
 
-        touched = 0
-        for memory_id in memory_ids:
-            expr = f"memory_id == {self._quote(memory_id)}"
-            rows = client.query(
-                collection_name=settings.milvus_collection_name,
-                filter=expr,
-                output_fields=[
-                    "memory_id",
-                    "user_id",
-                    "session_id",
-                    "scope",
-                    "memory_type",
-                    "content",
-                    "summary",
-                    "tags_json",
-                    "source",
-                    "dedupe_key",
-                    "created_at",
-                    "updated_at",
-                    "last_accessed_at",
-                    "expires_at",
-                    "is_active",
-                    "importance",
-                    "confidence",
-                    "metadata_json",
-                    "vector",
-                ],
-            )
-            if not rows:
-                continue
+        rows = client.query(
+            collection_name=settings.milvus_collection_name,
+            ids=memory_ids,
+            consistency_level=settings.milvus_consistency_level,
+            output_fields=self._output_fields(include_vector=True),
+        )
+        if not rows:
+            return 0
 
-            row = dict(rows[0])
-            vector = row.pop("vector", None)
+        records: list[MemoryRecord] = []
+        vectors: list[list[float]] = []
+        for row in rows:
+            raw_row = dict(row)
+            vector = raw_row.pop("vector", None)
             if not vector:
                 continue
 
-            record = self._record_from_hit(row)
+            record = self._record_from_hit(raw_row)
             record.last_accessed_at = accessed_at
             record.updated_at = accessed_at
-            self.upsert(record, vector)
-            touched += 1
+            records.append(record)
+            vectors.append(vector)
 
-        return touched
+        if not records:
+            return 0
+
+        payloads = [self._payload_from_record(record, vector) for record, vector in zip(records, vectors)]
+        self._upsert_payloads(payloads, flush=False)
+        return len(records)
 
     @property
     def import_error(self) -> str | None:
         return self._import_error
-

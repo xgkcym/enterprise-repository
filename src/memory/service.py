@@ -21,6 +21,9 @@ class DisabledMemoryStore(BaseMemoryStore):
     def upsert(self, record: MemoryRecord, vector: list[float]) -> str:
         return record.memory_id
 
+    def upsert_many(self, records: list[MemoryRecord], vectors: list[list[float]]) -> list[str]:
+        return [record.memory_id for record in records]
+
     def get_by_dedupe_key(self, *, user_id: str, dedupe_key: str) -> MemoryRecord | None:
         return None
 
@@ -105,15 +108,24 @@ class MemoryService:
         context = _build_memory_context(memories, limit=settings.memory_context_limit)
         used = bool(context)
 
+        touch_count = 0
+        touch_error: str | None = None
         if memories:
-            self.store.touch(
-                [memory.memory_id for memory in memories if memory.memory_id],
-                accessed_at=get_current_time(),
-            )
+            try:
+                touch_count = self.store.touch(
+                    [memory.memory_id for memory in memories if memory.memory_id],
+                    accessed_at=get_current_time(),
+                )
+            except Exception as exc:
+                touch_error = str(exc)
 
         diagnostics = [f"memory_recall_count={len(memories)}"]
         if used:
             diagnostics.append("memory_recall_context_built")
+        if touch_count:
+            diagnostics.append(f"memory_touch_updated={touch_count}")
+        if touch_error:
+            diagnostics.append(f"memory_touch_failed={touch_error}")
 
         return MemoryRecallResult(
             success=True,
@@ -164,16 +176,25 @@ class MemoryService:
         )
 
     def save_record(self, record: MemoryRecord) -> str:
+        return self.save_records([record])[0]
+
+    def save_records(self, records: list[MemoryRecord]) -> list[str]:
         if not self.store.is_available():
             raise RuntimeError("Memory store is not available")
-        vector = self.embed_text(record.summary or record.content)
-        if not vector:
-            raise ValueError("Memory record cannot be embedded")
-        if settings.memory_backend == "milvus" and len(vector) != settings.milvus_vector_dim:
-            raise ValueError(
-                f"Memory vector dim mismatch: expected {settings.milvus_vector_dim}, got {len(vector)}"
-            )
-        return self.store.upsert(record, vector)
+        if not records:
+            return []
+
+        vectors: list[list[float]] = []
+        for record in records:
+            vector = self.embed_text(record.summary or record.content)
+            if not vector:
+                raise ValueError("Memory record cannot be embedded")
+            if settings.memory_backend == "milvus" and len(vector) != settings.milvus_vector_dim:
+                raise ValueError(
+                    f"Memory vector dim mismatch: expected {settings.milvus_vector_dim}, got {len(vector)}"
+                )
+            vectors.append(vector)
+        return self.store.upsert_many(records, vectors)
 
 
 memory_service = MemoryService()

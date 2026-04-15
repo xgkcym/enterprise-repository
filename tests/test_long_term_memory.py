@@ -81,6 +81,8 @@ class FakeMemoryStore(BaseMemoryStore):
 
     def __init__(self):
         self.records = {}
+        self.upsert_calls = 0
+        self.upsert_many_calls = 0
 
     def is_available(self) -> bool:
         return True
@@ -89,8 +91,15 @@ class FakeMemoryStore(BaseMemoryStore):
         return []
 
     def upsert(self, record: MemoryRecord, vector: list[float]) -> str:
+        self.upsert_calls += 1
         self.records[record.memory_id] = record
         return record.memory_id
+
+    def upsert_many(self, records: list[MemoryRecord], vectors: list[list[float]]) -> list[str]:
+        self.upsert_many_calls += 1
+        for record in records:
+            self.records[record.memory_id] = record
+        return [record.memory_id for record in records]
 
     def get_by_dedupe_key(self, *, user_id: str, dedupe_key: str) -> MemoryRecord | None:
         for record in self.records.values():
@@ -100,6 +109,42 @@ class FakeMemoryStore(BaseMemoryStore):
 
     def touch(self, memory_ids: list[str], accessed_at: str) -> int:
         return 0
+
+
+class TouchFailStore(BaseMemoryStore):
+    backend = "fake"
+
+    def is_available(self) -> bool:
+        return True
+
+    def search(self, query: MemoryRecallQuery, query_vector: list[float]) -> list[MemoryRecord]:
+        return [
+            MemoryRecord(
+                memory_id="m1",
+                user_id=query.user_id,
+                session_id=query.session_id,
+                scope="user",
+                memory_type="preference",
+                content="prefer detailed answers",
+                summary="prefer detailed answers",
+                tags=["answer_style", "detailed"],
+                importance=0.9,
+                confidence=0.95,
+                source="user_explicit",
+                dedupe_key="preference:test",
+                created_at="2026-04-15T10:00:00",
+                updated_at="2026-04-15T10:00:00",
+            )
+        ]
+
+    def upsert(self, record: MemoryRecord, vector: list[float]) -> str:
+        return record.memory_id
+
+    def get_by_dedupe_key(self, *, user_id: str, dedupe_key: str) -> MemoryRecord | None:
+        return None
+
+    def touch(self, memory_ids: list[str], accessed_at: str) -> int:
+        raise RuntimeError("touch failed")
 
 
 class LongTermMemoryTests(unittest.TestCase):
@@ -131,8 +176,8 @@ class LongTermMemoryTests(unittest.TestCase):
                 MemoryWriteRequest(
                     user_id="7",
                     session_id="session-1",
-                    query="请记住 我在做新能源行业研究",
-                    answer="好的，我会记住这个长期背景。",
+                    query="\u8bf7\u8bb0\u4f4f\uff1a\u6211\u53eb\u5c0f\u738b",
+                    answer="\u597d\u7684\uff0c\u6211\u4f1a\u8bb0\u4f4f\u3002",
                     chat_history=[],
                     user_profile={},
                     existing_memories=[],
@@ -145,7 +190,67 @@ class LongTermMemoryTests(unittest.TestCase):
         saved_record = next(iter(fake_store.records.values()))
         self.assertEqual(saved_record.user_id, "7")
         self.assertEqual(saved_record.memory_type, "task_context")
-        self.assertIn("新能源行业研究", saved_record.summary)
+        self.assertEqual(saved_record.summary, "\u6211\u53eb\u5c0f\u738b")
+        self.assertEqual(fake_store.upsert_many_calls, 1)
+        self.assertEqual(fake_store.upsert_calls, 0)
+
+    def test_writeback_upserts_preference_rules_without_duplicates(self):
+        fake_store = FakeMemoryStore()
+        fake_service = MemoryService(store=fake_store)
+
+        with (
+            patch.object(settings, "memory_enabled", True),
+            patch.object(settings, "memory_write_enabled", True),
+            patch("src.memory.writeback.memory_service", fake_service),
+            patch.object(fake_service, "embed_text", return_value=[0.1, 0.2, 0.3]),
+        ):
+            request = MemoryWriteRequest(
+                user_id="8",
+                session_id="session-2",
+                query="\u4ee5\u540e\u9ed8\u8ba4\u7528\u4e2d\u6587\uff0c\u5e76\u4e14\u56de\u7b54\u8be6\u7ec6\u4e00\u70b9",
+                answer="\u597d\u7684\uff0c\u6211\u4f1a\u6309\u8fd9\u4e2a\u504f\u597d\u56de\u7b54\u3002",
+                chat_history=[],
+                user_profile={},
+                existing_memories=[],
+            )
+            first = write_long_term_memory(request)
+            second = write_long_term_memory(request)
+
+        self.assertTrue(first.success)
+        self.assertTrue(second.success)
+        self.assertEqual(first.written_count, 2)
+        self.assertEqual(second.written_count, 2)
+        self.assertEqual(len(fake_store.records), 2)
+        summaries = {record.summary for record in fake_store.records.values()}
+        self.assertEqual(
+            summaries,
+            {
+                "\u7528\u6237\u504f\u597d\u66f4\u8be6\u7ec6\u7684\u56de\u7b54",
+                "\u9ed8\u8ba4\u4f7f\u7528\u4e2d\u6587\u56de\u7b54",
+            },
+        )
+        self.assertEqual(fake_store.upsert_many_calls, 2)
+        self.assertEqual(fake_store.upsert_calls, 0)
+
+    def test_recall_still_succeeds_when_touch_fails(self):
+        service = MemoryService(store=TouchFailStore())
+
+        with patch.object(service, "embed_text", return_value=[0.1, 0.2, 0.3]):
+            result = service.recall(
+                MemoryRecallQuery(
+                    user_id="9",
+                    session_id="session-3",
+                    query="please explain in detail",
+                    top_k=3,
+                    min_score=0.0,
+                    scopes=["user", "session"],
+                )
+            )
+
+        self.assertTrue(result.success)
+        self.assertTrue(result.used)
+        self.assertEqual(len(result.memories), 1)
+        self.assertIn("memory_touch_failed=touch failed", result.diagnostics)
 
 
 if __name__ == "__main__":

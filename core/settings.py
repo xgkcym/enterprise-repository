@@ -34,7 +34,7 @@ class Settings(BaseSettings):
     milvus_token: str = Field(default=os.getenv("MILVUS_TOKEN", ""))
     milvus_db_name: str = Field(default=os.getenv("MILVUS_DB_NAME", "default"))
     milvus_collection_name: str = Field(default=os.getenv("MILVUS_COLLECTION_NAME", "long_term_memory"))
-    milvus_consistency_level: str = Field(default=os.getenv("MILVUS_CONSISTENCY_LEVEL", "Bounded"))
+    milvus_consistency_level: str = Field(default=os.getenv("MILVUS_CONSISTENCY_LEVEL", "Strong"))
     milvus_search_metric: str = Field(default=os.getenv("MILVUS_SEARCH_METRIC", "COSINE"))
     milvus_index_type: str = Field(default=os.getenv("MILVUS_INDEX_TYPE", "AUTOINDEX"))
     milvus_vector_dim: int = Field(default=int(os.getenv("MILVUS_VECTOR_DIM", os.getenv("EMBEDDING_DIM", "1536"))))
