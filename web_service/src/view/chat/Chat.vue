@@ -4,6 +4,7 @@
       <Sidebar
         :sessions="sessions"
         :current-session-id="currentSessionId"
+        :is-login="isLogin"
         @new-chat="handleNewChat"
         @select-session="handleSelectSession"
         @delete-session="handleDeleteSession"

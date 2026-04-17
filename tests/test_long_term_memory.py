@@ -64,10 +64,22 @@ _TEST_ENV = {
     "MEMORY_BACKEND": "disabled",
     "MEMORY_ENABLED": "false",
     "MEMORY_WRITE_ENABLED": "false",
+    "MILVUS_VECTOR_DIM": "1536",
+}
+
+_FORCED_ENV_KEYS = {
+    "EMBEDDING_DIM",
+    "MEMORY_BACKEND",
+    "MEMORY_ENABLED",
+    "MEMORY_WRITE_ENABLED",
+    "MILVUS_VECTOR_DIM",
 }
 
 for _key, _value in _TEST_ENV.items():
-    os.environ.setdefault(_key, _value)
+    if _key in _FORCED_ENV_KEYS:
+        os.environ[_key] = _value
+    else:
+        os.environ.setdefault(_key, _value)
 
 from core.settings import settings
 from src.memory.service import DisabledMemoryStore, MemoryService
@@ -169,6 +181,7 @@ class LongTermMemoryTests(unittest.TestCase):
         with (
             patch.object(settings, "memory_enabled", True),
             patch.object(settings, "memory_write_enabled", True),
+            patch.object(settings, "memory_backend", "disabled"),
             patch("src.memory.writeback.memory_service", fake_service),
             patch.object(fake_service, "embed_text", return_value=[0.1, 0.2, 0.3]),
         ):
@@ -201,6 +214,7 @@ class LongTermMemoryTests(unittest.TestCase):
         with (
             patch.object(settings, "memory_enabled", True),
             patch.object(settings, "memory_write_enabled", True),
+            patch.object(settings, "memory_backend", "disabled"),
             patch("src.memory.writeback.memory_service", fake_service),
             patch.object(fake_service, "embed_text", return_value=[0.1, 0.2, 0.3]),
         ):
@@ -235,7 +249,10 @@ class LongTermMemoryTests(unittest.TestCase):
     def test_recall_still_succeeds_when_touch_fails(self):
         service = MemoryService(store=TouchFailStore())
 
-        with patch.object(service, "embed_text", return_value=[0.1, 0.2, 0.3]):
+        with (
+            patch.object(settings, "memory_backend", "disabled"),
+            patch.object(service, "embed_text", return_value=[0.1, 0.2, 0.3]),
+        ):
             result = service.recall(
                 MemoryRecallQuery(
                     user_id="9",
