@@ -1,39 +1,38 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
-from jose import JWTError, jwt
+
 from fastapi import HTTPException, status
+from jose import JWTError, jwt
 
-# JWT 配置（生产环境请使用环境变量）
-SECRET_KEY = "your-secret-key-here-change-in-production"  # 生产环境请更换
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30 * 60  # Token 过期时间
+from core.settings import settings
 
 
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
-    """创建 JWT Token"""
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+    """Create a JWT access token."""
     to_encode = data.copy()
-    if expires_delta:
-        expire = datetime.utcnow() + expires_delta
-    else:
-        expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-
+    expire = datetime.now(timezone.utc) + (
+        expires_delta or timedelta(minutes=settings.access_token_expire_minutes)
+    )
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt
+    return jwt.encode(to_encode, settings.effective_jwt_secret_key, algorithm=settings.jwt_algorithm)
 
 
 def verify_token(token: str) -> dict:
-    """验证 JWT Token"""
+    """Verify a JWT access token and return its payload."""
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id: str = payload.get("sub")
+        payload = jwt.decode(
+            token,
+            settings.effective_jwt_secret_key,
+            algorithms=[settings.jwt_algorithm],
+        )
+        user_id: str | None = payload.get("sub")
         if user_id is None:
             raise credentials_exception
         return payload
-    except JWTError:
-        raise credentials_exception
+    except JWTError as exc:
+        raise credentials_exception from exc
