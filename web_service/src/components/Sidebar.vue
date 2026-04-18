@@ -56,7 +56,7 @@
                       :class="expandedFolders.includes(folder.dept_id) ? 'fa-folder-open' : 'fa-folder'"
                     ></i>
                     <span class="text-sm font-medium">{{ folder.dept_name || `部门 ${folder.dept_id}` }}</span>
-                    <span class="ml-2 text-xs text-gray-500">({{ folder.children.length }} 个文件)</span>
+                    <span class="ml-2 text-xs text-gray-500">（{{ folder.children.length }} 个文件）</span>
                   </div>
                   <i
                     class="fas fa-chevron-down text-xs transition-transform duration-300"
@@ -309,7 +309,7 @@ const handleFileUpload = (event) => {
 
 const handleDownload = async (file) => {
   if (!file?.download_url && !file?.file_path) {
-    ElMessage.warning("该文件暂无可用下载地址");
+    ElMessage.warning("该文件暂时没有可用的下载地址");
     return;
   }
   try {

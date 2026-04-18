@@ -25,6 +25,20 @@ export const get_file = () => {
   });
 };
 
+export const list_admin_files = () => {
+  return request({
+    url: "/file/admin/files",
+    method: "get",
+  });
+};
+
+export const delete_admin_file = (fileId) => {
+  return request({
+    url: `/file/admin/files/${fileId}`,
+    method: "delete",
+  });
+};
+
 export const download_file = async (downloadUrl, fileName) => {
   const blob = await request({
     url: downloadUrl,
@@ -35,7 +49,7 @@ export const download_file = async (downloadUrl, fileName) => {
   const objectUrl = window.URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = objectUrl;
-  link.download = fileName || "download";
+  link.download = fileName || "下载文件";
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);

@@ -3,7 +3,7 @@
     <div class="admin-page-header">
       <div>
         <h1>监控总览</h1>
-        <p>聚合展示聊天链路的核心运行指标与趋势。</p>
+        <p>集中展示智能体聊天链路的核心运行指标与趋势变化。</p>
       </div>
       <el-button type="primary" :loading="loading" @click="loadData">刷新</el-button>
     </div>
@@ -17,12 +17,12 @@
 
     <div class="panel-grid">
       <el-card shadow="hover">
-        <template #header>近 7 天请求与失败率</template>
+        <template #header>近 7 天请求与失败趋势</template>
         <EChartPanel :option="requestTrendOption" height="320px" />
       </el-card>
 
       <el-card shadow="hover">
-        <template #header>近 7 天 Token 趋势</template>
+        <template #header>近 7 天令牌数与成本趋势</template>
         <EChartPanel :option="tokenTrendOption" height="320px" />
       </el-card>
     </div>

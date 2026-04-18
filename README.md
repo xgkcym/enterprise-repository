@@ -208,6 +208,12 @@ alembic upgrade head
 python app.py
 ```
 
+Windows 说明：
+
+- 主应用已经不再内置 `PaddleOCR` 依赖，OCR 统一通过仓库里的 `ocr_service/` 提供。
+- 这样可以避免 `PaddleOCR 3.x` 及其依赖链影响主应用里的 `langchain`、`llama-index` 等核心包。
+- 启动主应用前，请先启动 `ocr_service`，并在 `.env` 里配置 `OCR_SERVICE_URL`。
+
 ### 前端
 
 ```powershell

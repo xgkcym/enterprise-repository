@@ -11,6 +11,7 @@ from service.models.users import UserModel
 from service.router.users.index import user_router
 from service.utils.jwt_utils import create_access_token
 from service.utils.password_utils import verify_and_upgrade_password
+from service.utils.user_types import is_admin_user
 
 
 class LoginRequest(BaseModel):
@@ -53,6 +54,7 @@ async def login(
             "username": user.username,
             "dept_id": user.dept_id,
             "role_id": user.role_id,
+            "user_type": user.user_type,
         },
         expires_delta=access_token_expires,
     )
@@ -69,6 +71,8 @@ async def login(
                 "username": user.username,
                 "dept_id": user.dept_id,
                 "role_id": user.role_id,
+                "user_type": user.user_type,
+                "is_admin": is_admin_user(user),
             },
         },
     }

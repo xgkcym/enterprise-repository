@@ -1,4 +1,4 @@
-﻿import axios from "axios";
+import axios from "axios";
 import { ElLoading, ElMessage } from "element-plus";
 
 import router from "../router";
@@ -6,6 +6,11 @@ import router from "../router";
 const configuredBaseURL = (import.meta.env.VITE_API_BASE_URL || "").trim();
 
 export const baseURL = configuredBaseURL || "http://" + window.location.hostname + ":1016";
+
+const clearAuthSession = () => {
+  localStorage.removeItem("token");
+  localStorage.removeItem("userInfo");
+};
 
 let loadingInstance;
 const request = axios.create({
@@ -26,7 +31,7 @@ request.interceptors.request.use(
 
     loadingInstance = ElLoading.service({
       lock: true,
-      text: "Loading...",
+      text: "加载中...",
       background: "rgba(0, 0, 0, 0.7)",
     });
     return config;
@@ -53,11 +58,12 @@ request.interceptors.response.use(
       if (!error.response) {
         ElMessage.error("网络错误");
       } else if (error.response.status === 401) {
+        clearAuthSession();
         ElMessage.error("登录已过期");
-        router.replace({ path: "/" });
+        router.replace({ path: "/chat" });
       } else if (error.response.status === 403) {
         ElMessage.error("权限不足");
-        router.replace({ path: "/" });
+        router.replace({ path: "/chat" });
       } else if (error.response.status === 404) {
         ElMessage.error("请求地址错误");
       } else if (error.response.status === 500) {

@@ -7,6 +7,7 @@ from sqlmodel import select
 from service.models.department import DepartmentModel
 from service.models.role_department import RoleDepartmentModel
 from service.models.users import UserModel
+from service.utils.user_types import is_admin_user
 
 
 async def get_allowed_department_ids(
@@ -14,6 +15,12 @@ async def get_allowed_department_ids(
     current_user: UserModel,
     session: AsyncSession,
 ) -> list[int]:
+    if is_admin_user(current_user):
+        result = await session.execute(
+            select(DepartmentModel.dept_id).order_by(DepartmentModel.dept_id)
+        )
+        return [int(dept_id) for dept_id in result.scalars().all()]
+
     result = await session.execute(
         select(RoleDepartmentModel.dept_id).where(RoleDepartmentModel.role_id == current_user.role_id)
     )

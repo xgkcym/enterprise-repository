@@ -7,7 +7,7 @@ from zoneinfo import ZoneInfo
 
 from fastapi import Depends, Query
 
-from service.dependencies.auth import get_current_active_user
+from service.dependencies.auth import get_current_admin_user
 from service.models.users import UserModel
 from service.router.agent.index import agent_router
 from service.utils.chat_store import chat_store
@@ -269,7 +269,7 @@ def _serialize_run(doc: dict[str, Any]) -> dict[str, Any]:
 
 @agent_router.get("/admin/monitor/overview")
 async def get_agent_monitor_overview(
-    current_user: UserModel = Depends(get_current_active_user),
+    current_user: UserModel = Depends(get_current_admin_user),
 ):
     _ = current_user
     start = datetime.now(LOCAL_TZ).replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=6)
@@ -285,7 +285,7 @@ async def get_agent_monitor_overview(
 @agent_router.get("/admin/monitor/runs")
 async def get_agent_monitor_runs(
     limit: int = Query(default=20, ge=1, le=100),
-    current_user: UserModel = Depends(get_current_active_user),
+    current_user: UserModel = Depends(get_current_admin_user),
 ):
     _ = current_user
     runs = await asyncio.to_thread(chat_store.list_recent_runs, limit=limit)

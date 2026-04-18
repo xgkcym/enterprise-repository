@@ -5,9 +5,9 @@
       <header class="admin-topbar">
         <div>
           <div class="admin-topbar-title">后台管理</div>
-          <div class="admin-topbar-subtitle">Agent、监控与运行分析</div>
+          <div class="admin-topbar-subtitle">监控系统运行情况，并维护用户、部门、角色和文件</div>
         </div>
-        <div class="admin-topbar-badge">Admin Console</div>
+        <div class="admin-topbar-badge">管理控制台</div>
       </header>
       <main class="admin-content">
         <router-view />
@@ -67,8 +67,6 @@ import AdminSidebar from "../../components/admin/AdminSidebar.vue";
 }
 
 .admin-content {
-  /* flex: 1; */
-  /* min-height: 0; */
   height: calc(100vh - 94px);
   overflow: auto;
 }

@@ -14,16 +14,12 @@ from docx.oxml.text.paragraph import CT_P
 from docx.table import Table
 from docx.text.paragraph import Paragraph
 from llama_index.core.schema import Document as LlamaDocument
-from paddleocr import PaddleOCR
 from pptx import Presentation
 from tqdm import tqdm
 
 from core.custom_types import DocumentMetadata
 from core.settings import settings
-
-
-ocr = PaddleOCR()
-
+from src.rag.ocr_client import remote_ocr_image
 
 def iter_docx_blocks(doc: DocxDocument):
     """Yield paragraphs and tables in their original document order."""
@@ -120,22 +116,14 @@ def load_markdown(path: str, metadata: DocumentMetadata) -> Sequence[LlamaDocume
     return sections
 
 
-def ocr_image(img: np.ndarray, min_score: float = settings.orc_min_score) -> str:
+def ocr_image(img: np.ndarray, min_score: float | None = settings.orc_min_score) -> str:
     """Run OCR on an image and return extracted text."""
-    result = ocr.ocr(img)
-    if not result or not result[0]:
-        return ""
-
-    texts = []
-    for line in result[0]:
-        try:
-            text, score = line[1]
-            text = text.replace("\n", " ").strip()
-            if score >= min_score and len(text) > 1:
-                texts.append(text)
-        except Exception:
-            continue
-    return "\n".join(texts)
+    score_threshold = 0.0 if min_score is None else min_score
+    return remote_ocr_image(
+        img,
+        min_score=score_threshold,
+        language=settings.orc_lang,
+    )
 
 
 def preprocess_image(img: np.ndarray) -> np.ndarray:

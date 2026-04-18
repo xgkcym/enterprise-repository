@@ -1,7 +1,7 @@
 <template>
   <el-dialog
     :model-value="modelValue"
-    title="User Profile"
+    title="个人设置"
     width="640px"
     destroy-on-close
     @close="emit('update:modelValue', false)"
@@ -9,74 +9,74 @@
     <el-form label-position="top" class="profile-form">
       <el-row :gutter="16">
         <el-col :span="12">
-          <el-form-item label="Default answer style">
+          <el-form-item label="默认回答风格">
             <el-select v-model="form.answer_style" class="w-full">
-              <el-option label="Concise" value="concise" />
-              <el-option label="Standard" value="standard" />
-              <el-option label="Detailed" value="detailed" />
+              <el-option label="精简" value="concise" />
+              <el-option label="标准" value="standard" />
+              <el-option label="详细" value="detailed" />
             </el-select>
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item label="Preferred language">
+          <el-form-item label="偏好语言">
             <el-select v-model="form.preferred_language" class="w-full">
-              <el-option label="Chinese" value="zh-CN" />
-              <el-option label="English" value="en-US" />
+              <el-option label="中文" value="zh-CN" />
+              <el-option label="英文" value="en-US" />
             </el-select>
           </el-form-item>
         </el-col>
       </el-row>
 
-      <el-form-item label="Preferred topics">
+      <el-form-item label="偏好主题">
         <el-select
           v-model="form.preferred_topics"
           multiple
           filterable
           allow-create
           default-first-option
-          placeholder="Press Enter to add multiple topics"
+          placeholder="按回车可连续添加多个主题"
           class="w-full"
         />
         <div class="helper-text">
-          These topics are treated as weak hints during query rewriting and retrieval expansion.
+          这些主题会在查询改写和检索扩展时作为弱提示使用。
         </div>
       </el-form-item>
 
       <el-row :gutter="16">
         <el-col :span="12">
-          <el-form-item label="Show citations">
+          <el-form-item label="显示引用">
             <el-switch v-model="form.prefers_citations" />
             <div class="helper-text">
-              When off, the UI will hide citations when possible while audit data remains available.
+              关闭后，界面会尽量隐藏引用信息，但审计数据仍然保留。
             </div>
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item label="Allow web search">
+          <el-form-item label="允许联网搜索">
             <el-switch v-model="form.allow_web_search" />
             <div class="helper-text">
-              When on, live public-information questions may route to web search.
+              开启后，涉及实时公共信息的问题可能会走联网搜索。
             </div>
           </el-form-item>
         </el-col>
       </el-row>
 
-      <el-form-item label="Notes">
+      <el-form-item label="备注">
         <el-input
           v-model="form.profile_notes"
           type="textarea"
           :rows="4"
           maxlength="1000"
           show-word-limit
-          placeholder="Optional role context, communication style, or long-term interests."
+          placeholder="可选：填写你的角色背景、沟通偏好或长期关注点。"
         />
       </el-form-item>
     </el-form>
 
     <template #footer>
       <div class="dialog-footer">
-        <el-button @click="emit('update:modelValue', false)">Cancel</el-button>
-        <el-button type="primary" :loading="saving" @click="handleSave">Save</el-button>
+        <el-button @click="emit('update:modelValue', false)">取消</el-button>
+        <el-button type="primary" :loading="saving" @click="handleSave">保存</el-button>
       </div>
     </template>
   </el-dialog>

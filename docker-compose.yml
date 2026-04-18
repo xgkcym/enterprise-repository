@@ -5,6 +5,8 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-rag_agent}
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -19,6 +21,8 @@ services:
     image: mongo:7
     environment:
       MONGO_INITDB_DATABASE: ${MONGODB_DB_NAME:-rag_agent}
+    ports:
+      - "127.0.0.1:${MONGO_PORT:-27017}:27017"
     volumes:
       - mongo_data:/data/db
     healthcheck:

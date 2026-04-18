@@ -43,6 +43,7 @@ export function useAgentMonitor() {
       timeZone: "Asia/Shanghai",
     }).format(date);
   };
+
   const stringifyPayload = (payload) => {
     if (!payload) return "-";
     if (typeof payload === "string") return payload;
@@ -52,6 +53,7 @@ export function useAgentMonitor() {
       return String(payload);
     }
   };
+
   const extractOutputField = (item, field) => {
     const output = item?.output;
     if (!output || typeof output !== "object") return "";
@@ -59,16 +61,16 @@ export function useAgentMonitor() {
   };
 
   const overviewCards = computed(() => [
-    { label: "今日请求量", value: overview.value.today_request_count || 0 },
+    { label: "今日请求数", value: overview.value.today_request_count || 0 },
     { label: "今日活跃用户", value: overview.value.today_active_users || 0 },
     { label: "今日活跃会话", value: overview.value.today_active_sessions || 0 },
     { label: "今日新建会话", value: overview.value.today_new_sessions || 0 },
-    { label: "今日 Tokens", value: overview.value.today_total_tokens || 0 },
-    { label: "今日估算成本", value: `$${formatCost(overview.value.today_estimated_cost_usd)}` },
-    { label: "平均响应耗时", value: `${overview.value.avg_duration_ms || 0} ms` },
-    { label: "平均每次 Tokens", value: overview.value.avg_tokens_per_request || 0 },
-    { label: "会话平均轮数", value: overview.value.avg_session_message_count || 0 },
-    { label: "单会话最高轮数", value: overview.value.max_session_message_count || 0 },
+    { label: "今日总令牌数", value: overview.value.today_total_tokens || 0 },
+    { label: "今日预估成本", value: `$${formatCost(overview.value.today_estimated_cost_usd)}` },
+    { label: "平均耗时", value: `${overview.value.avg_duration_ms || 0} ms` },
+    { label: "平均每次令牌数", value: overview.value.avg_tokens_per_request || 0 },
+    { label: "会话平均消息数", value: overview.value.avg_session_message_count || 0 },
+    { label: "单会话最大消息数", value: overview.value.max_session_message_count || 0 },
     { label: "失败率", value: formatRate(overview.value.fail_rate) },
   ]);
 
@@ -77,7 +79,11 @@ export function useAgentMonitor() {
   const requestTrendOption = computed(() => ({
     color: ["#1d4ed8", "#dc2626", "#f59e0b"],
     tooltip: { trigger: "axis" },
-    legend: { top: 8, textStyle: { color: "#445468" } },
+    legend: {
+      top: 8,
+      textStyle: { color: "#445468" },
+      data: ["请求数", "失败数", "失败率"],
+    },
     grid: { left: 36, right: 18, top: 48, bottom: 28 },
     xAxis: {
       type: "category",
@@ -87,7 +93,7 @@ export function useAgentMonitor() {
     yAxis: [
       {
         type: "value",
-        name: "数量",
+        name: "请求数",
         axisLabel: { color: "#607086" },
         splitLine: { lineStyle: { color: "#e5ebf3" } },
       },
@@ -132,7 +138,11 @@ export function useAgentMonitor() {
   const tokenTrendOption = computed(() => ({
     color: ["#0f766e", "#7c3aed"],
     tooltip: { trigger: "axis" },
-    legend: { top: 8, textStyle: { color: "#445468" } },
+    legend: {
+      top: 8,
+      textStyle: { color: "#445468" },
+      data: ["总令牌数", "预估成本"],
+    },
     grid: { left: 36, right: 18, top: 48, bottom: 28 },
     xAxis: {
       type: "category",
@@ -142,7 +152,7 @@ export function useAgentMonitor() {
     yAxis: [
       {
         type: "value",
-        name: "Tokens",
+        name: "令牌数",
         axisLabel: { color: "#607086" },
         splitLine: { lineStyle: { color: "#e5ebf3" } },
       },
@@ -158,13 +168,13 @@ export function useAgentMonitor() {
     ],
     series: [
       {
-        name: "Tokens",
+        name: "总令牌数",
         type: "bar",
         barMaxWidth: 24,
         data: dailyTrend.value.map((item) => item.total_tokens),
       },
       {
-        name: "估算成本",
+        name: "预估成本",
         type: "line",
         smooth: false,
         yAxisIndex: 1,

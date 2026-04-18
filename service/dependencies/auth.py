@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from service.database.connect import get_session
 from service.models.users import UserModel
 from service.utils.jwt_utils import verify_token
+from service.utils.user_types import is_admin_user
 
 security = HTTPBearer(auto_error=False)
 
@@ -53,4 +54,15 @@ async def get_current_active_user(
     current_user: UserModel = Depends(get_current_user),
 ) -> UserModel:
     _ensure_user_is_active(current_user)
+    return current_user
+
+
+async def get_current_admin_user(
+    current_user: UserModel = Depends(get_current_active_user),
+) -> UserModel:
+    if not is_admin_user(current_user):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required",
+        )
     return current_user

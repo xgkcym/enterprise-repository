@@ -3,17 +3,20 @@
     <div class="p-4 border-b border-gray-200 bg-white flex items-center justify-between gap-4">
       <div class="flex items-center gap-3 min-w-0">
         <div>
-          <h3 class="font-semibold text-lg truncate">{{ sessionTitle || "Agent Chat" }}</h3>
+          <h3 class="font-semibold text-lg truncate">{{ sessionTitle || "智能体对话" }}</h3>
           <div class="flex items-center gap-2 mt-1 text-xs text-gray-500 flex-wrap">
-            <span class="px-2 py-1 bg-green-100 text-green-800 rounded-full">Connected</span>
+            <span class="px-2 py-1 bg-green-100 text-green-800 rounded-full">已连接</span>
             <span class="px-2 py-1 bg-slate-100 text-slate-700 rounded-full">
-              Current output: {{ outputLevelLabel }}
+              当前输出：{{ outputLevelLabel }}
             </span>
             <span v-if="isLogin" class="px-2 py-1 bg-sky-100 text-sky-700 rounded-full">
-              Profile default: {{ profileAnswerStyleLabel }}
+              默认偏好：{{ profileAnswerStyleLabel }}
             </span>
             <span v-if="isLogin" class="px-2 py-1 bg-amber-100 text-amber-700 rounded-full">
-              Web search: {{ userProfile.allow_web_search ? "On" : "Off" }}
+              联网搜索：{{ userProfile.allow_web_search ? "开启" : "关闭" }}
+            </span>
+            <span v-if="isLogin && canAccessAdmin" class="px-2 py-1 bg-rose-100 text-rose-700 rounded-full">
+              管理员
             </span>
           </div>
         </div>
@@ -26,12 +29,12 @@
           @click="showLoginModal = true"
         >
           <i class="fas fa-user-circle mr-2"></i>
-          <span>Login</span>
+          <span>登录</span>
         </button>
 
         <div v-else class="flex items-center space-x-2">
           <span class="text-sm font-medium text-gray-700 truncate max-w-[120px]">
-            {{ userInfo.username || "Unknown user" }}
+            {{ userInfo.username || "未知用户" }}
           </span>
           <div class="relative">
             <button class="text-gray-500 hover:text-primary transition-colors" @click="showUserMenu = !showUserMenu">
@@ -43,13 +46,20 @@
             >
               <div class="py-2">
                 <button
+                  v-if="canAccessAdmin"
+                  class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  @click="goToAdmin"
+                >
+                  <i class="fas fa-shield-halved mr-2"></i>管理后台
+                </button>
+                <button
                   class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                   @click="openProfilePanel"
                 >
-                  <i class="fas fa-sliders-h mr-2"></i>Profile settings
+                  <i class="fas fa-sliders-h mr-2"></i>偏好设置
                 </button>
                 <button class="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-gray-100" @click="logout">
-                  <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                  <i class="fas fa-sign-out-alt mr-2"></i>退出登录
                 </button>
               </div>
             </div>
@@ -64,12 +74,11 @@
           <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white">
             <i class="fas fa-robot"></i>
           </div>
-          <span class="ml-2 text-sm font-medium">Assistant</span>
+          <span class="ml-2 text-sm font-medium">智能助手</span>
         </div>
         <div class="bg-white p-4 rounded-lg rounded-tl-none shadow-sm max-w-3xl">
           <p class="text-gray-700">
-            Ask about the documents you can access. The agent will route between direct answer, RAG,
-            structured data queries, and web search when allowed.
+            请围绕你有权限访问的文档提问。智能体会在直接回答、RAG、结构化数据查询，以及允许时的联网搜索之间自动选择合适路径。
           </p>
         </div>
       </div>
@@ -82,7 +91,7 @@
       >
         <div class="flex items-center mb-1 gap-2">
           <template v-if="isUserMessage(message)">
-            <span class="text-sm font-medium">You</span>
+            <span class="text-sm font-medium">你</span>
             <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-700">
               <i class="fas fa-user"></i>
             </div>
@@ -91,7 +100,7 @@
             <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white">
               <i class="fas fa-robot"></i>
             </div>
-            <span class="text-sm font-medium">Assistant</span>
+            <span class="text-sm font-medium">智能助手</span>
           </template>
         </div>
 
@@ -110,31 +119,33 @@
           >
             <div class="flex flex-wrap gap-2 text-xs">
               <span class="px-2 py-1 bg-slate-100 text-slate-700 rounded-full">
-                Status: {{ message.report_summary.status || message.status || "-" }}
+                状态：{{ message.report_summary.status || message.status || "-" }}
               </span>
               <span v-if="message.report_summary.action" class="px-2 py-1 bg-blue-100 text-blue-700 rounded-full">
-                Action: {{ message.report_summary.action }}
+                动作：{{ message.report_summary.action }}
               </span>
               <span
                 v-if="message.report_summary.output_level"
                 class="px-2 py-1 bg-indigo-100 text-indigo-700 rounded-full"
               >
-                Output: {{ outputLevelLabelMap[message.report_summary.output_level] || message.report_summary.output_level }}
+                输出：{{
+                  outputLevelLabelMap[message.report_summary.output_level] || message.report_summary.output_level
+                }}
               </span>
               <span
                 v-if="message.report_summary.fail_reason"
                 class="px-2 py-1 bg-red-100 text-red-700 rounded-full"
               >
-                Fail reason: {{ message.report_summary.fail_reason }}
+                失败原因：{{ message.report_summary.fail_reason }}
               </span>
             </div>
 
             <div v-if="message.report_summary.reason" class="text-xs text-gray-500">
-              Route note: {{ message.report_summary.reason }}
+              路由说明：{{ message.report_summary.reason }}
             </div>
 
             <div v-if="message.citations && message.citations.length">
-              <div class="text-xs font-medium text-gray-500 mb-2">Citations</div>
+              <div class="text-xs font-medium text-gray-500 mb-2">引用</div>
               <div class="flex flex-wrap gap-2">
                 <span
                   v-for="citation in message.citations"
@@ -150,24 +161,24 @@
               class="text-xs text-primary hover:text-primary/80 transition-colors"
               @click="toggleDetails(message.message_id)"
             >
-              {{ isDetailOpen(message.message_id) ? "Hide run details" : "Show run details" }}
+              {{ isDetailOpen(message.message_id) ? "收起运行详情" : "展开运行详情" }}
             </button>
 
             <div v-if="isDetailOpen(message.message_id)" class="detail-panel">
               <div class="detail-row">
-                <span class="detail-label">Trace steps</span>
+                <span class="detail-label">轨迹步骤</span>
                 <span>{{ message.report_summary.trace?.length || 0 }}</span>
               </div>
               <div class="detail-row">
-                <span class="detail-label">Action history</span>
+                <span class="detail-label">动作历史</span>
                 <span>{{ message.report_summary.action_history?.length || 0 }}</span>
               </div>
               <div class="detail-row">
-                <span class="detail-label">Long-term memory used</span>
-                <span>{{ message.report_summary.long_term_memory_used ? "Yes" : "No" }}</span>
+                <span class="detail-label">是否使用长期记忆</span>
+                <span>{{ message.report_summary.long_term_memory_used ? "是" : "否" }}</span>
               </div>
               <div v-if="message.report_summary.user_profile?.preferred_topics?.length" class="detail-column">
-                <span class="detail-label">Preferred topics</span>
+                <span class="detail-label">关注主题</span>
                 <div class="flex flex-wrap gap-2 mt-2">
                   <span
                     v-for="topic in message.report_summary.user_profile.preferred_topics"
@@ -182,14 +193,14 @@
                 v-if="message.report_summary.preferred_topics_usage?.available_topics?.length"
                 class="detail-column"
               >
-                <span class="detail-label">Preferred topic impact</span>
+                <span class="detail-label">关注主题影响</span>
                 <div class="space-y-2 mt-2">
                   <div class="detail-row">
-                    <span>Used in this run</span>
-                    <span>{{ message.report_summary.preferred_topics_usage.used ? "Yes" : "No" }}</span>
+                    <span>本次运行已使用</span>
+                    <span>{{ message.report_summary.preferred_topics_usage.used ? "是" : "否" }}</span>
                   </div>
                   <div class="detail-row">
-                    <span>Guidance queries</span>
+                    <span>引导查询数</span>
                     <span>{{ message.report_summary.preferred_topics_usage.guidance_query_count || 0 }}</span>
                   </div>
                   <div
@@ -207,7 +218,7 @@
                 </div>
               </div>
               <div v-if="message.report_summary.long_term_memory_context" class="detail-column">
-                <span class="detail-label">Long-term memory context</span>
+                <span class="detail-label">长期记忆上下文</span>
                 <div class="detail-card mt-2 whitespace-pre-wrap text-sm text-gray-600">
                   {{ message.report_summary.long_term_memory_context }}
                 </div>
@@ -216,14 +227,14 @@
                 v-if="message.report_summary.memory_write_summary && (message.report_summary.memory_write_summary.written_count || message.report_summary.memory_write_summary.diagnostics?.length)"
                 class="detail-column"
               >
-                <span class="detail-label">Memory writeback</span>
+                <span class="detail-label">记忆回写</span>
                 <div class="space-y-2 mt-2">
                   <div class="detail-row">
-                    <span>Written</span>
+                    <span>已写入</span>
                     <span>{{ message.report_summary.memory_write_summary.written_count || 0 }}</span>
                   </div>
                   <div class="detail-row">
-                    <span>Skipped</span>
+                    <span>已跳过</span>
                     <span>{{ message.report_summary.memory_write_summary.skipped_count || 0 }}</span>
                   </div>
                   <div
@@ -238,7 +249,7 @@
                 v-if="message.report_summary.citation_details && message.report_summary.citation_details.length"
                 class="detail-column"
               >
-                <span class="detail-label">Citation details</span>
+                <span class="detail-label">引用详情</span>
                 <div class="space-y-2 mt-2">
                   <div
                     v-for="detail in message.report_summary.citation_details"
@@ -257,7 +268,7 @@
 
           <div v-if="message.status === 'streaming'" class="mt-2 text-xs text-primary flex items-center gap-2">
             <span class="inline-block w-2 h-2 rounded-full bg-primary animate-pulse"></span>
-            Streaming
+            正在生成
           </div>
         </div>
       </div>
@@ -269,7 +280,7 @@
           <textarea
             v-model="inputMessage"
             class="w-full p-3 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary resize-none h-20"
-            :placeholder="isLogin ? 'Ask a question...' : 'Please login to start chatting'"
+            :placeholder="isLogin ? '请输入问题...' : '请先登录后再开始聊天'"
             :disabled="!isLogin || isStreaming"
             @keydown.enter.exact.prevent="emitSend"
           ></textarea>
@@ -278,7 +289,7 @@
         <div class="flex justify-between items-center gap-3">
           <div class="flex items-center gap-3 flex-wrap">
             <div class="flex items-center gap-2">
-              <label class="text-xs text-gray-500">Output level</label>
+              <label class="text-xs text-gray-500">输出级别</label>
               <select
                 class="px-2 py-1 text-sm border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-primary/40"
                 :value="outputLevel"
@@ -291,7 +302,7 @@
               </select>
             </div>
             <div class="text-xs text-gray-400">
-              {{ isStreaming ? "Agent is working..." : "Streaming answers, profile controls, and session replay are enabled." }}
+              {{ isStreaming ? "智能体处理中..." : "已启用流式回复、偏好设置和会话回放。" }}
             </div>
           </div>
           <button
@@ -299,7 +310,7 @@
             :disabled="!isLogin || isStreaming || !inputMessage.trim()"
             @click="emitSend"
           >
-            <span>{{ isStreaming ? "Running" : "Send" }}</span>
+            <span>{{ isStreaming ? "发送中" : "发送" }}</span>
             <i class="fas fa-paper-plane ml-2"></i>
           </button>
         </div>
@@ -309,20 +320,20 @@
     <teleport to="body">
       <div v-if="showLoginModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
         <div class="bg-white rounded-lg w-full max-w-sm p-6">
-          <h3 class="text-lg font-semibold text-center mb-4">User Login</h3>
+          <h3 class="text-lg font-semibold text-center mb-4">用户登录</h3>
 
           <div class="space-y-4">
             <input
               v-model="loginForm.username"
               type="text"
               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
-              placeholder="Username"
+              placeholder="用户名"
             />
             <input
               v-model="loginForm.password"
               type="password"
               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
-              placeholder="Password"
+              placeholder="密码"
             />
           </div>
 
@@ -331,13 +342,13 @@
               class="flex-1 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
               @click="showLoginModal = false"
             >
-              Cancel
+              取消
             </button>
             <button
               class="flex-1 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
               @click="handleLogin"
             >
-              Login
+              登录
             </button>
           </div>
         </div>
@@ -355,9 +366,12 @@
 
 <script setup>
 import { computed, nextTick, ref, watch } from "vue";
+import { useRouter } from "vue-router";
 
 import { user_login } from "../api/user";
 import UserProfilePanel from "./UserProfilePanel.vue";
+
+const router = useRouter();
 
 const props = defineProps({
   messages: {
@@ -393,7 +407,7 @@ const props = defineProps({
   },
   sessionTitle: {
     type: String,
-    default: "Agent Chat",
+    default: "智能体对话",
   },
   outputLevel: {
     type: String,
@@ -420,21 +434,24 @@ const loginForm = ref({
   password: "123456",
 });
 const outputLevelOptions = [
-  { label: "Concise", value: "concise" },
-  { label: "Standard", value: "standard" },
-  { label: "Detailed", value: "detailed" },
+  { label: "精简", value: "concise" },
+  { label: "标准", value: "standard" },
+  { label: "详细", value: "detailed" },
 ];
 const outputLevelLabelMap = {
-  concise: "Concise",
-  standard: "Standard",
-  detailed: "Detailed",
+  concise: "精简",
+  standard: "标准",
+  detailed: "详细",
 };
 
 const outputLevelLabel = computed(
-  () => outputLevelLabelMap[props.outputLevel] || props.outputLevel || "Standard"
+  () => outputLevelLabelMap[props.outputLevel] || props.outputLevel || "标准"
 );
 const profileAnswerStyleLabel = computed(
-  () => outputLevelLabelMap[props.userProfile?.answer_style] || props.userProfile?.answer_style || "Standard"
+  () => outputLevelLabelMap[props.userProfile?.answer_style] || props.userProfile?.answer_style || "标准"
+);
+const canAccessAdmin = computed(
+  () => props.userInfo?.user_type === "admin" || props.userInfo?.is_admin === true
 );
 
 const scrollToBottom = async () => {
@@ -475,6 +492,11 @@ const logout = () => {
   localStorage.removeItem("token");
   localStorage.removeItem("userInfo");
   emit("logout");
+};
+
+const goToAdmin = () => {
+  showUserMenu.value = false;
+  router.push("/admin");
 };
 
 const openProfilePanel = () => {

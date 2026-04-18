@@ -57,11 +57,11 @@ export const stream_agent_chat = async ({ query, sessionId, outputLevel, onEvent
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(errorText || "Chat request failed");
+    throw new Error(errorText || "对话请求失败");
   }
 
   if (!response.body) {
-    throw new Error("Streaming is not supported in this browser");
+    throw new Error("当前浏览器不支持流式响应");
   }
 
   const reader = response.body.getReader();

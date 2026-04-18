@@ -7,6 +7,7 @@ from starlette.middleware.cors import CORSMiddleware
 from starlette.staticfiles import StaticFiles
 
 from core.settings import settings
+from service.bootstrap_admin import ensure_bootstrap_admin
 from service.database.connect import async_engine
 from service.router.agent.index import agent_router
 from service.router.file.index import file_router, legacy_public_file_router
@@ -26,6 +27,8 @@ def create_server() -> FastAPI:
                 await conn.run_sync(SQLModel.metadata.create_all)
         else:
             print("Database auto-create is disabled. Run `alembic upgrade head` before starting in a fresh environment.")
+
+        await ensure_bootstrap_admin()
 
         yield
 

@@ -90,6 +90,15 @@ class Settings(BaseSettings):
     )
 
     delete_file: bool = Field(default=_env_bool("DELETE_FILE", False))
+    bootstrap_admin_enabled: bool = Field(
+        default=_env_bool("BOOTSTRAP_ADMIN_ENABLED", os.getenv("APP_ENV", "development") != "production")
+    )
+    bootstrap_admin_username: str = Field(default=os.getenv("BOOTSTRAP_ADMIN_USERNAME", "admin"))
+    bootstrap_admin_password: str = Field(default=os.getenv("BOOTSTRAP_ADMIN_PASSWORD", "Admin@123456"))
+    bootstrap_admin_dept_id: int = Field(default=_env_int("BOOTSTRAP_ADMIN_DEPT_ID", 1))
+    bootstrap_admin_dept_name: str = Field(default=os.getenv("BOOTSTRAP_ADMIN_DEPT_NAME", "默认部门"))
+    bootstrap_admin_role_id: int = Field(default=_env_int("BOOTSTRAP_ADMIN_ROLE_ID", 1))
+    bootstrap_admin_role_name: str = Field(default=os.getenv("BOOTSTRAP_ADMIN_ROLE_NAME", "默认权限角色"))
 
     database_name: str | None = Field(default=os.getenv("DATABASE_NAME"))
     database_string: str | None = Field(default=os.getenv("DATABASE_STRING"))
@@ -145,6 +154,8 @@ class Settings(BaseSettings):
     pdf_chunk_overlap: int | None = Field(
         default=_env_int("PDF_CHUNK_OVERLAP", 0) if os.getenv("PDF_CHUNK_OVERLAP") else None
     )
+    ocr_service_url: str | None = Field(default=os.getenv("OCR_SERVICE_URL"))
+    ocr_service_timeout_seconds: float = Field(default=_env_float("OCR_SERVICE_TIMEOUT_SECONDS", 30.0))
     orc_lang: str | None = Field(default=os.getenv("OCR_LANG"))
     orc_min_score: float | None = Field(
         default=_env_float("OCR_MIN_SCORE", 0.0) if os.getenv("OCR_MIN_SCORE") else None

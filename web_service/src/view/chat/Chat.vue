@@ -57,12 +57,12 @@ const outputLevel = ref(localStorage.getItem("agentOutputLevel") || "standard");
 const userInfo = ref(
   localStorage.getItem("userInfo")
     ? JSON.parse(localStorage.getItem("userInfo"))
-    : { username: "" }
+    : { username: "", user_type: "user", is_admin: false }
 );
 
 const currentSessionTitle = computed(() => {
   const current = sessions.value.find((item) => item.session_id === currentSessionId.value);
-  return current?.title || "New Session";
+  return current?.title || "新会话";
 });
 
 const normalizeMessage = (message) => ({
@@ -160,14 +160,14 @@ const handleDeleteSession = async (sessionId) => {
 
 const handleLoginSuccess = async ({ user }) => {
   isLogin.value = true;
-  userInfo.value = user || { username: "" };
+  userInfo.value = user || { username: "", user_type: "user", is_admin: false };
   await loadUserProfile();
   await loadSessions();
 };
 
 const handleLogout = () => {
   isLogin.value = false;
-  userInfo.value = { username: "" };
+  userInfo.value = { username: "", user_type: "user", is_admin: false };
   userProfile.value = defaultUserProfile();
   sessions.value = [];
   handleNewChat();
@@ -190,7 +190,7 @@ const handleProfileSave = async (payload) => {
     };
     outputLevel.value = userProfile.value.answer_style || "standard";
     localStorage.setItem("agentOutputLevel", outputLevel.value);
-    ElMessage.success("Profile updated");
+    ElMessage.success("偏好设置已更新");
   } finally {
     isSavingProfile.value = false;
   }
@@ -271,7 +271,7 @@ const handleSendMessage = async (query) => {
         if (event === "error") {
           const targetId = assistantMessageId || `assistant-error-${Date.now()}`;
           const index = ensureAssistantMessage(targetId);
-          messages.value[index].content = data.message || "Request failed. Please retry.";
+          messages.value[index].content = data.message || "请求失败，请重试。";
           messages.value[index].status = "failed";
         }
       },

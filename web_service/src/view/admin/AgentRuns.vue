@@ -2,48 +2,48 @@
   <div class="admin-page">
     <div class="admin-page-header">
       <div>
-        <h1>Run Details</h1>
-        <p>Inspect each run with query evolution, action history, token usage, and profile impact.</p>
+        <h1>运行详情</h1>
+        <p>查看每次运行的查询演化、动作历史、令牌消耗以及用户偏好影响。</p>
       </div>
-      <el-button type="primary" :loading="loading" @click="loadData">Refresh</el-button>
+      <el-button type="primary" :loading="loading" @click="loadData">刷新</el-button>
     </div>
 
     <el-card shadow="hover">
-      <template #header>Recent Runs</template>
+      <template #header>最近运行</template>
       <el-table :data="runs" border size="small" row-key="run_id" max-height="calc(100vh - 340px)">
         <el-table-column type="expand">
           <template #default="{ row }">
             <div class="detail-grid">
               <div>
-                <span class="detail-label">Raw query</span>
+                <span class="detail-label">原始问题</span>
                 <pre>{{ row.query || "-" }}</pre>
               </div>
               <div>
-                <span class="detail-label">Resolved query</span>
+                <span class="detail-label">解析后问题</span>
                 <pre>{{ row.resolved_query || "-" }}</pre>
               </div>
               <div>
-                <span class="detail-label">Working query</span>
+                <span class="detail-label">工作问题</span>
                 <pre>{{ row.working_query || "-" }}</pre>
               </div>
               <div>
-                <span class="detail-label">Route reason</span>
+                <span class="detail-label">路由原因</span>
                 <pre>{{ row.reason || "-" }}</pre>
               </div>
               <div>
-                <span class="detail-label">Rewrite query</span>
+                <span class="detail-label">改写问题</span>
                 <pre>{{ row.rewrite_query || "-" }}</pre>
               </div>
               <div>
-                <span class="detail-label">Expand queries</span>
+                <span class="detail-label">扩展问题</span>
                 <pre>{{ row.expand_query?.join("\n") || "-" }}</pre>
               </div>
               <div>
-                <span class="detail-label">Decompose queries</span>
+                <span class="detail-label">拆解问题</span>
                 <pre>{{ row.decompose_query?.join("\n") || "-" }}</pre>
               </div>
               <div>
-                <span class="detail-label">Fail reason</span>
+                <span class="detail-label">失败原因</span>
                 <pre>{{ row.fail_reason || "-" }}</pre>
               </div>
             </div>
@@ -52,10 +52,10 @@
               v-if="row.preferred_topics_usage?.available_topics?.length || row.user_profile?.preferred_topics?.length"
               class="profile-impact-panel"
             >
-              <div class="detail-label">Preferred Topic Impact</div>
+              <div class="detail-label">关注主题影响</div>
               <div class="impact-grid">
                 <div class="impact-card">
-                  <div class="impact-title">Configured topics</div>
+                  <div class="impact-title">已配置主题</div>
                   <div class="impact-tags">
                     <span
                       v-for="topic in row.user_profile?.preferred_topics || row.preferred_topics_usage?.available_topics || []"
@@ -67,15 +67,15 @@
                   </div>
                 </div>
                 <div class="impact-card">
-                  <div class="impact-title">Used in this run</div>
-                  <div class="impact-value">{{ row.preferred_topics_usage?.used ? "Yes" : "No" }}</div>
+                  <div class="impact-title">本次是否使用</div>
+                  <div class="impact-value">{{ row.preferred_topics_usage?.used ? "是" : "否" }}</div>
                 </div>
                 <div class="impact-card">
-                  <div class="impact-title">Guidance queries</div>
+                  <div class="impact-title">引导查询数</div>
                   <div class="impact-value">{{ row.preferred_topics_usage?.guidance_query_count || 0 }}</div>
                 </div>
                 <div class="impact-card">
-                  <div class="impact-title">Applied steps</div>
+                  <div class="impact-title">应用步骤</div>
                   <div class="impact-tags">
                     <span
                       v-for="step in row.preferred_topics_usage?.applied_steps || []"
@@ -91,7 +91,7 @@
             </div>
 
             <div v-if="row.action_history?.length" class="timeline-wrap">
-              <div class="detail-label">Execution Timeline</div>
+              <div class="detail-label">执行时间线</div>
               <div class="space-y-2">
                 <div
                   v-for="(item, historyIndex) in row.action_history"
@@ -104,47 +104,49 @@
                         class="history-kind"
                         :class="item.kind === 'tool' ? 'history-kind-tool' : 'history-kind-reasoning'"
                       >
-                        {{ item.kind === "tool" ? "Tool" : "Reasoning" }}
+                        {{ item.kind === "tool" ? "工具" : "推理" }}
                       </span>
-                      <strong>Step {{ historyIndex + 1 }}: {{ item.name || "-" }}</strong>
+                      <strong>步骤 {{ historyIndex + 1 }}：{{ item.name || "-" }}</strong>
                     </div>
                     <div class="history-meta">
                       <span>{{ item.duration_ms ? `${item.duration_ms} ms` : "-" }}</span>
-                      <span>Status: {{ item.status || "-" }}</span>
+                      <span>状态：{{ item.status || "-" }}</span>
                     </div>
                   </div>
                   <div class="history-grid">
                     <div v-if="item.input" class="history-block">
-                      <div class="history-label">Input</div>
+                      <div class="history-label">输入</div>
                       <pre>{{ stringifyPayload(item.input) }}</pre>
                     </div>
                     <div v-if="item.output" class="history-block">
-                      <div class="history-label">Output</div>
+                      <div class="history-label">输出</div>
                       <pre>{{ stringifyPayload(item.output) }}</pre>
                     </div>
                   </div>
                   <div class="history-notes">
-                    <span v-if="extractOutputField(item, 'reason')">Reason: {{ extractOutputField(item, "reason") }}</span>
-                    <span v-if="extractOutputField(item, 'message')">Message: {{ extractOutputField(item, "message") }}</span>
-                    <span v-if="extractOutputField(item, 'fail_reason')">Fail reason: {{ extractOutputField(item, "fail_reason") }}</span>
+                    <span v-if="extractOutputField(item, 'reason')">原因：{{ extractOutputField(item, "reason") }}</span>
+                    <span v-if="extractOutputField(item, 'message')">消息：{{ extractOutputField(item, "message") }}</span>
+                    <span v-if="extractOutputField(item, 'fail_reason')">
+                      失败原因：{{ extractOutputField(item, "fail_reason") }}
+                    </span>
                   </div>
-                  <div v-if="item.error" class="history-error">Error: {{ item.error }}</div>
+                  <div v-if="item.error" class="history-error">错误：{{ item.error }}</div>
                 </div>
               </div>
             </div>
           </template>
         </el-table-column>
-        <el-table-column label="Created At" min-width="180">
+        <el-table-column label="创建时间" min-width="180">
           <template #default="{ row }">{{ formatDateTime(row.created_at) }}</template>
         </el-table-column>
-        <el-table-column prop="action" label="Action" min-width="120" />
-        <el-table-column prop="status" label="Status" min-width="90" />
-        <el-table-column prop="duration_ms" label="Duration (ms)" min-width="110" />
-        <el-table-column prop="total_tokens" label="Tokens" min-width="100" />
-        <el-table-column label="Estimated Cost (USD)" min-width="150">
+        <el-table-column prop="action" label="动作" min-width="120" />
+        <el-table-column prop="status" label="状态" min-width="90" />
+        <el-table-column prop="duration_ms" label="耗时（ms）" min-width="110" />
+        <el-table-column prop="total_tokens" label="令牌数" min-width="100" />
+        <el-table-column label="预估成本（USD）" min-width="150">
           <template #default="{ row }">{{ formatCost(row.estimated_cost_usd) }}</template>
         </el-table-column>
-        <el-table-column label="Answer Preview" min-width="280">
+        <el-table-column label="回答预览" min-width="280">
           <template #default="{ row }">{{ row.answer_preview || "-" }}</template>
         </el-table-column>
       </el-table>
@@ -366,16 +368,6 @@ onMounted(loadData);
   gap: 12px;
   margin-top: 10px;
   font-size: 12px;
-  color: #64748b;
-}
-
-@media (max-width: 768px) {
-  .admin-page {
-    padding: 16px;
-  }
-
-  .admin-page-header {
-    flex-direction: column;
-  }
+  color: #475569;
 }
 </style>
