@@ -1,7 +1,6 @@
 .env
 .venv
 /web_service/node_modules
-/data/*
 /ocr_service/.venv/
 /ocr_service/logs/
 /ocr_service/__pycache__/
