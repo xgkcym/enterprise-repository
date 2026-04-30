@@ -33,7 +33,7 @@ class BaseResult(BaseModel):
 
 
 class BaseNodeResult(BaseResult):
-    """给 reasoning node 用"""
+    """给推理节点使用。"""
     name: Optional[str] = Field(default=None, description="名称")
     answer: Optional[Any] = Field(default=None, description="回答")
 
@@ -47,7 +47,7 @@ class BaseToolResult(BaseResult):
 
 
 class BaseLLMDecideResult(BaseResult):
-    """LLM 诊断返回的数据"""
+    """LLM 诊断返回的数据。"""
 
     reason: Optional[str] = Field(default=None, description="诊断信息")
     confidence: Optional[float] = Field(default=None, description="置信度")

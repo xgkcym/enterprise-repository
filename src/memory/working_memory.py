@@ -70,18 +70,18 @@ def build_memory_entry(event: BaseEvent) -> str:
 
 
 def compact_short_term_memory(memory_items: list[str], max_items: int = MAX_SHORT_TERM_MEMORY) -> list[str]:
-    """压缩短期记忆列表，保留最近的max_items个有效条目
+    """压缩短期记忆列表，保留最近的 max_items 个有效条目
 
     对输入的字符串列表进行规范化处理，去除空项和空白字符，
-    并确保返回的条目数量不超过max_items限制。
+    并确保返回的条目数量不超过 max_items 限制。
     当条目数超过限制时，保留最新的条目（列表末尾的项）。
 
     Args:
         memory_items: 原始记忆条目列表，可能包含空字符串或空白字符
-        max_items: 最大保留条目数，默认为MAX_SHORT_TERM_MEMORY(8)
+        max_items: 最大保留条目数，默认为 MAX_SHORT_TERM_MEMORY(8)
 
     Returns:
-        list[str]: 规范化且长度不超过max_items的字符串列表
+        list[str]: 规范化且长度不超过 max_items 的字符串列表
     """
     # 规范化处理：去除空项和所有条目的首尾空白
     normalized = [item.strip() for item in memory_items if item and item.strip()]
@@ -90,7 +90,7 @@ def compact_short_term_memory(memory_items: list[str], max_items: int = MAX_SHOR
     if len(normalized) <= max_items:
         return normalized
 
-    # 超过限制时，只保留最新的max_items个条目（列表末尾的项）
+    # 超过限制时，只保留最新的 max_items 个条目（列表末尾的项）
     return normalized[-max_items:]
 
 

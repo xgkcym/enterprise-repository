@@ -100,7 +100,7 @@ class DenseRetriever:
             for node in results:
                 if node.score < score:
                     continue
-                # metadata过滤
+                # 元数据过滤
                 if not self._matches_filters(node.metadata, filters):
                     continue
 

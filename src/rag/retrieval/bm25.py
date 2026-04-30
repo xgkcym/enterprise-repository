@@ -38,7 +38,7 @@ class BM25LiteRetriever(BaseBM25Retrieval):
 
     def __init__(self, documents):
         if not documents:
-            raise ValueError("documents不能为空")
+            raise ValueError("文档列表不能为空")
         self.docs = documents
         self.corpus = []
         for  doc in documents:
@@ -64,7 +64,7 @@ class BM25LiteRetriever(BaseBM25Retrieval):
             scores = self.bm25.get_scores(tokenized_query)
             for doc, score in zip(self.docs, scores):
 
-                # metadata过滤
+                # 元数据过滤
                 if not self.matches_filters(doc["metadata"], filters):
                     continue
 

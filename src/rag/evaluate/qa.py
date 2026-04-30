@@ -20,18 +20,18 @@ _CJK_PATTERN = re.compile(r"[\u4e00-\u9fff]")
 class QaData(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
-    question: str = Field(..., description="Question")
-    answer: str = Field(..., description="Answer")
-    language: str = Field(..., description="Language")
-    difficulty: str = Field(..., description="Difficulty")
-    intent: str = Field(..., description="Intent")
-    node_ids: list[str] = Field(..., description="Supporting node ids")
+    question: str = Field(..., description="问题")
+    answer: str = Field(..., description="答案")
+    language: str = Field(..., description="语言")
+    difficulty: str = Field(..., description="难度")
+    intent: str = Field(..., description="意图")
+    node_ids: list[str] = Field(..., description="支撑节点 ID")
 
 
 class QAResult(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
-    qa_list: list[QaData] = Field(default_factory=list, description="Generated QA rows")
+    qa_list: list[QaData] = Field(default_factory=list, description="生成的 QA 记录")
 
 
 def _normalize_language_code(value: str | None) -> str:

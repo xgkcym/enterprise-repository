@@ -19,12 +19,12 @@ MAX_SUB_QUERIES = 3
 class AggregateResult(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    evidence_summary: Optional[str] = Field(default="", description="Aggregated evidence summary")
-    is_sufficient: bool = Field(default=False, description="Whether aggregated evidence is sufficient")
-    reason: Optional[str] = Field(default=None, description="Aggregation reason")
+    evidence_summary: Optional[str] = Field(default="", description="聚合后的证据摘要")
+    is_sufficient: bool = Field(default=False, description="聚合后的证据是否充分")
+    reason: Optional[str] = Field(default=None, description="聚合原因")
     fail_reason: Optional[Literal["insufficient_context", "ambiguous_query", "no_data"]] = Field(
         default=None,
-        description="Aggregation failure reason",
+        description="聚合失败原因",
     )
 
 
@@ -115,12 +115,12 @@ def build_sub_query_context(results: list[SubQueryResult]) -> str:
         blocks.append(
             "\n".join(
                 [
-                    f"[Sub-query {index}]",
-                    f"Question: {result.sub_query}",
-                    f"Evidence summary: {result.evidence_summary or result.answer}",
-                    f"Is sufficient: {result.is_sufficient}",
-                    f"Fail reason: {result.fail_reason or ''}",
-                    f"Diagnostics: {', '.join(result.diagnostics)}",
+                    f"[子查询 {index}]",
+                    f"问题：{result.sub_query}",
+                    f"证据摘要：{result.evidence_summary or result.answer}",
+                    f"证据是否充分：{result.is_sufficient}",
+                    f"失败原因：{result.fail_reason or ''}",
+                    f"诊断信息：{', '.join(result.diagnostics)}",
                 ]
             )
         )

@@ -20,18 +20,18 @@ def _format_list(values: list[str] | None) -> str:
 class FinancialGraphAnswerResult(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    answer: str = Field(default="", description="Short user-facing answer")
-    evidence_summary: str = Field(default="", description="Evidence-oriented explanation")
-    citations: list[str] = Field(default_factory=list, description="Citation node ids")
-    is_sufficient: bool = Field(default=False, description="Whether the evidence is sufficient")
+    answer: str = Field(default="", description="面向用户的简短回答")
+    evidence_summary: str = Field(default="", description="基于证据的说明")
+    citations: list[str] = Field(default_factory=list, description="引用节点 ID")
+    is_sufficient: bool = Field(default=False, description="证据是否充分")
     fail_reason: Literal[
         "low_recall",
         "bad_ranking",
         "ambiguous_query",
         "no_data",
         "insufficient_context",
-    ] | None = Field(default=None, description="Failure reason when evidence is insufficient")
-    reason: str = Field(default="", description="Short model-side reasoning trace")
+    ] | None = Field(default=None, description="证据不足时的失败原因")
+    reason: str = Field(default="", description="简短的模型侧推理轨迹")
 
 
 def generate_financial_graph_answer(

@@ -42,18 +42,18 @@ def _append_long_term_memory_hint(state: State, prompt: str, *, stream_mode: boo
         return prompt
 
     instructions = (
-        "Long-term memory can be used as authoritative context for user-provided profile facts, preferences, identity, and other saved personal facts.\n"
-        "If the user asks about their own previously stated information, answer directly from long-term memory when it is relevant.\n"
-        "Do not use long-term memory as documentary evidence for enterprise facts, uploaded files, external facts, or real-time information.\n"
-        "If it conflicts with the current chat context, trust the current chat context.\n"
-        "Do not mention hidden memory systems.\n"
+        "长时记忆可作为用户已提供画像事实、偏好、身份信息和其他已保存个人事实的权威上下文。\n"
+        "如果用户询问自己此前说明过的信息，且长时记忆相关，可以直接基于长时记忆回答。\n"
+        "不要将长时记忆当作企业事实、已上传文件、外部事实或实时信息的文档证据。\n"
+        "如果长时记忆与当前对话上下文冲突，信任当前对话上下文。\n"
+        "不要提及隐藏的记忆系统。\n"
     )
-    section_title = "[Long-term Memory Hint]" if stream_mode else "[Long-term Memory Context]"
+    section_title = "[长时记忆提示]" if stream_mode else "[长时记忆上下文]"
     return f"{prompt}\n\n{section_title}\n{context}\n\n{instructions}"
 
 
 def _build_direct_answer_prompt(state: State) -> str:
-    chat_history = "\n".join(state.chat_history[-8:]) if state.chat_history else "None"
+    chat_history = "\n".join(state.chat_history[-8:]) if state.chat_history else "无"
     effective_query = state.working_query or state.resolved_query or state.query or ""
     prompt = DIRECT_ANSWER_PROMPT.format(
         raw_query=state.query or "",
@@ -61,13 +61,13 @@ def _build_direct_answer_prompt(state: State) -> str:
         chat_history=chat_history,
         output_level=state.output_level,
         preferred_language=_preferred_language(state),
-        preferred_topics=", ".join(_preferred_topics(state)) or "None",
+        preferred_topics=", ".join(_preferred_topics(state)) or "无",
     ).strip()
     return _append_long_term_memory_hint(state, prompt, stream_mode=False)
 
 
 def _build_direct_answer_stream_prompt(state: State) -> str:
-    chat_history = "\n".join(state.chat_history[-8:]) if state.chat_history else "None"
+    chat_history = "\n".join(state.chat_history[-8:]) if state.chat_history else "无"
     effective_query = state.working_query or state.resolved_query or state.query or ""
     prompt = DIRECT_ANSWER_STREAM_PROMPT.format(
         raw_query=state.query or "",
@@ -75,7 +75,7 @@ def _build_direct_answer_stream_prompt(state: State) -> str:
         chat_history=chat_history,
         output_level=state.output_level,
         preferred_language=_preferred_language(state),
-        preferred_topics=", ".join(_preferred_topics(state)) or "None",
+        preferred_topics=", ".join(_preferred_topics(state)) or "无",
     ).strip()
     return _append_long_term_memory_hint(state, prompt, stream_mode=True)
 
@@ -165,7 +165,7 @@ def _invoke_direct_answer_result(state: State) -> FinalAnswerResult:
 def _stream_direct_answer_result(state: State) -> FinalAnswerResult:
     handler = get_answer_token_handler()
     if handler is None:
-        raise RuntimeError("answer token handler is not bound")
+        raise RuntimeError("回答 token 处理器未绑定")
 
     def on_token(token: str) -> None:
         handler(token)

@@ -924,29 +924,32 @@ class RAGService:
 
     # 评估
     def benchmark(self):
-        benchmark_data = self.qa_collection.find({'state':0}).to_list()
+        benchmark_data = self._cursor_to_list(self.qa_collection.find({"state": 0}))
 
         if not benchmark_data:
             return {
-                "message":"暂无新评估数据",
-                "success": True
+                "message": "暂无新评估数据",
+                "success": True,
             }
 
-        retrieval_report = evaluate_retrieval(self.dense_retriever,benchmark_data)
+        retrieval_report = evaluate_retrieval(self.dense_retriever, benchmark_data)
         print(f"retrieval report: {retrieval_report}")
-        rerank_report = evaluate_rerank(self.dense_retriever,self.rerank,benchmark_data)
+        rerank_report = evaluate_rerank(self.dense_retriever, self.rerank, benchmark_data)
         print(f"rerank report: {rerank_report}")
         generation_report = evaluate_generation(
-            llm=self.llm,
+            answer_llm=self.llm,
+            judge_llm=self.chatgpt_llm,
             benchmark=benchmark_data,
             retriever=self.dense_retriever,
-            rerank=self.rerank
+            rerank=self.rerank,
         )
-        print(f"generation report: {rerank_report}")
+        print(f"generation report: {generation_report}")
         return {
-            "retrieval_report":retrieval_report,
-            "rerank_report":rerank_report,
-            "generation_report":generation_report
+            "success": True,
+            "benchmark_count": len(benchmark_data),
+            "retrieval_report": retrieval_report,
+            "rerank_report": rerank_report,
+            "generation_report": generation_report,
         }
 
 

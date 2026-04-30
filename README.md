@@ -349,11 +349,33 @@ OCR_MIN_SCORE=0.5
 | `scripts/export_db_exports.py` | 导出 PostgreSQL / MongoDB 数据到 `db/` |
 | `scripts/import_db_exports.py` | 从 `db/` 导入 PostgreSQL / MongoDB 数据 |
 | `scripts/generate_qa_dataset.py` | 从已入库文档生成 QA 数据，或回滚 QA 源文档状态 |
+| `scripts/run_benchmark.py` | 使用 MongoDB 中的 QA 数据执行离线评估 |
 | `scripts/export_financial_fact_lora.py` | 从金融事实图谱导出 LoRA 训练 JSONL |
 | `scripts/prepare_financial_fact_lora_from_data.py` | 从本地 `data/` 目录准备金融事实 LoRA 训练 JSONL |
 | `scripts/train_financial_fact_extractor.py` | 训练金融事实抽取 LoRA 适配器 |
 
 训练相关依赖位于 `requirements-train.txt`。
+
+## 📏 离线评估
+
+项目当前可通过 `scripts/run_benchmark.py` 调用已有的离线评估入口。该脚本会执行：
+
+- 检索评估
+- 重排评估
+- 生成评估
+
+运行方式：
+
+```bash
+python scripts/run_benchmark.py
+python scripts/run_benchmark.py --export-path data/benchmarks/benchmark_summary.json
+```
+
+说明：
+
+- 评估数据来自 MongoDB 的 QA 集合。
+- 当前只会读取 `state=0` 的 QA 记录作为 benchmark 数据。
+- 如果返回“暂无新评估数据”，通常表示当前 QA 集合里没有可用于评估的 `state=0` 记录。
 
 ## 🧪 测试与 CI
 

@@ -22,7 +22,7 @@ class BaseMemoryStore(ABC):
 
     def upsert_many(self, records: list[MemoryRecord], vectors: list[list[float]]) -> list[str]:
         if len(records) != len(vectors):
-            raise ValueError("records 和 vectors 必须具有相同的长度")
+            raise ValueError("记忆记录和向量必须具有相同的长度")
         return [self.upsert(record, vector) for record, vector in zip(records, vectors)]
 
     @abstractmethod

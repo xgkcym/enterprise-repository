@@ -65,7 +65,7 @@ def _build_finish_response(
 def _build_clarify_response(state: State, question: str, reason: str, diagnostics: list[str]):
     return _build_finish_response(
         state,
-        answer=question or "Please clarify the exact subject, scope, or time period you want to ask about.",
+        answer=question or "请补充你想询问的具体主体、范围或时间段。",
         reason=reason or "clarify_question",
         status="success",
         fail_reason="ambiguous_query",

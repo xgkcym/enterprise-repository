@@ -13,15 +13,15 @@ from src.types.policy_type import AgentPlannerDecision, AgentPlannerStructuredDe
 
 def _format_chat_history(chat_history: list[str]) -> str:
     if not chat_history:
-        return "None"
+        return "无"
     return "\n".join(f"- {item}" for item in chat_history[-8:])
 
 
 def _format_query_evolution(state: State) -> str:
     lines = [
-        f"- raw_query: {state.query or 'None'}",
-        f"- resolved_query: {state.resolved_query or 'None'}",
-        f"- working_query: {state.working_query or 'None'}",
+        f"- raw_query: {state.query or '无'}",
+        f"- resolved_query: {state.resolved_query or '无'}",
+        f"- working_query: {state.working_query or '无'}",
     ]
     if state.rewrite_query:
         lines.append(f"- rewrite_query: {state.rewrite_query}")
@@ -50,16 +50,16 @@ def _format_recent_context(state: State) -> str:
             "- last_rag_result: "
             f"is_sufficient={bool(state.last_rag_result.is_sufficient)}; "
             f"documents={len(state.last_rag_result.documents or [])}; "
-            f"fail_reason={getattr(state.last_rag_result, 'fail_reason', None) or 'None'}"
+            f"fail_reason={getattr(state.last_rag_result, 'fail_reason', None) or '无'}"
         )
     if state.last_graph_result:
         lines.append(
             "- last_graph_result: "
             f"is_sufficient={bool(state.last_graph_result.is_sufficient)}; "
             f"documents={len(state.last_graph_result.documents or [])}; "
-            f"fail_reason={getattr(state.last_graph_result, 'fail_reason', None) or 'None'}"
+            f"fail_reason={getattr(state.last_graph_result, 'fail_reason', None) or '无'}"
         )
-    return "\n".join(lines) if lines else "None"
+    return "\n".join(lines) if lines else "无"
 
 
 def _build_planner_prompt(state: State, allowed_actions: list[str], *, planning_stage: str) -> str:
@@ -161,6 +161,6 @@ def choose_next_action(
     ]
 
     if decision.next_action == "clarify_question" and not (decision.clarification_question or "").strip():
-        decision.clarification_question = "Please clarify the exact subject, scope, or period you want to ask about."
+        decision.clarification_question = "请补充你想询问的具体主体、范围或时间段。"
 
     return decision

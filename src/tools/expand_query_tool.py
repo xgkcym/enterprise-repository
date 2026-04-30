@@ -11,12 +11,12 @@ from src.types.base_type import BaseNodeResult
 
 
 class ExpandResult(BaseNodeResult):
-    name: Optional[str] = Field(default="expand_query", description="tool name")
-    answer: List[str] = Field(default_factory=list, description="expanded queries")
+    name: Optional[str] = Field(default="expand_query", description="工具名称")
+    answer: List[str] = Field(default_factory=list, description="扩展后的查询")
 
 
 class ExpandStructuredResult(BaseModel):
-    answer: List[str] = Field(default_factory=list, description="expanded queries")
+    answer: List[str] = Field(default_factory=list, description="扩展后的查询")
 
 
 def _normalize_expand_queries(queries: list[str], original_query: str, user_profile=None) -> list[str]:

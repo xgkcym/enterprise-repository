@@ -18,15 +18,15 @@ def evaluate_retrieval(retriever, benchmark):
 
         gt = item["node_ids"]
 
-        # Recall@K（比例）
+        # 召回率@K
         recall = recall_at_k(docs, gt)
         total_recall += recall
 
-        # MRR
+        # 平均倒数排名
         mrr = mrr_multi(docs, gt)
         total_mrr += mrr
 
-        # Coverage（是否全部命中）
+        # 覆盖率
         cov = coverage(docs, gt)
         total_coverage += cov
 

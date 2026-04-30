@@ -228,7 +228,7 @@ class MilvusMemoryStore(BaseMemoryStore):
     def _upsert_payloads(self, payloads: list[dict[str, Any]], *, flush: bool) -> None:
         client = self._ensure_client()
         if client is None:
-            raise RuntimeError("Milvus memory store is not available")
+            raise RuntimeError("记忆存储 Milvus 不可用")
         if not payloads:
             return
 
@@ -298,7 +298,7 @@ class MilvusMemoryStore(BaseMemoryStore):
 
     def upsert_many(self, records: list[MemoryRecord], vectors: list[list[float]]) -> list[str]:
         if len(records) != len(vectors):
-            raise ValueError("records and vectors must have the same length")
+            raise ValueError("记忆记录和向量必须具有相同的长度")
         if not records:
             return []
 

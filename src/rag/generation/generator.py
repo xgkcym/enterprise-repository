@@ -11,16 +11,16 @@ from src.prompts.rag.evidence_prompt import EVIDENCE_PROMPT
 class EvidenceAssessmentResult(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    evidence_summary: str = Field(default="", description="Evidence-oriented summary")
-    citations: list[str] = Field(default_factory=list, description="Citation node ids")
-    is_sufficient: bool = Field(default=False, description="Whether evidence is sufficient")
+    evidence_summary: str = Field(default="", description="基于证据的摘要")
+    citations: list[str] = Field(default_factory=list, description="引用节点 ID")
+    is_sufficient: bool = Field(default=False, description="证据是否充分")
     fail_reason: Literal[
         "low_recall",
         "bad_ranking",
         "ambiguous_query",
         "no_data",
         "insufficient_context",
-    ] | None = Field(default=None, description="Failure reason when evidence is insufficient")
+    ] | None = Field(default=None, description="证据不足时的失败原因")
 
 
 def evaluate_evidence(llm: BaseChatModel, query: str, context: str) -> EvidenceAssessmentResult:
@@ -33,5 +33,5 @@ def evaluate_evidence(llm: BaseChatModel, query: str, context: str) -> EvidenceA
     return response
 
 
-# Backward-compatible alias during refactor.
+# 重构期间保留的向后兼容别名。
 generate_answer = evaluate_evidence

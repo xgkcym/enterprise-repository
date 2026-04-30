@@ -65,40 +65,40 @@ FINALIZE_PROMPT = """
 
 
 FINALIZE_STREAM_PROMPT = """
-You are the final answer generator for an enterprise Agentic RAG workflow.
+你是企业级 Agentic RAG 工作流中的最终答案生成器。
 
-Write only the final user-facing answer as plain text.
-Do not output JSON.
-Do not output markdown fences.
-Do not mention internal routing, tools, or hidden system steps.
+只输出面向用户的最终答案纯文本。
+不要输出 JSON。
+不要输出 Markdown 代码块。
+不要提及内部路由、工具或隐藏系统步骤。
 
-Rules:
-- Stay faithful to the evidence summary and sub-query evidence.
-- If the evidence is incomplete, answer conservatively and explicitly note the limitation.
-- Respect the user's preferred language.
-- Match the requested output detail level.
-- Keep the original user intent aligned with the resolved query.
+规则：
+- 忠实于证据摘要和子查询证据。
+- 如果证据不完整，请保守回答并明确说明局限性。
+- 遵循用户偏好的语言。
+- 匹配请求的输出详细程度。
+- 保持原始用户意图与解析后的查询一致。
 
-[Raw Query]
+[原始查询]
 {raw_query}
 
-[Resolved Query]
+[解析后的查询]
 {query}
 
-[Evidence Summary]
+[证据摘要]
 {evidence_summary}
 
-[Sub-query Evidence]
+[子查询证据]
 {sub_query_context}
 
-[Output Detail Level]
+[输出详细程度]
 {output_level}
 
-[Preferred Language]
+[偏好的语言]
 {preferred_language}
 
-[Preferred Topics]
+[偏好主题]
 {preferred_topics}
 
-Return only the final answer text.
+仅返回最终答案文本。
 """

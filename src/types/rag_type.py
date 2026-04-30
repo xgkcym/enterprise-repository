@@ -24,7 +24,7 @@ class DocumentInfo(BaseModel):
     content: str = Field(default="", description="分块内容")
     metadata: DocumentMetadata = Field(default_factory=lambda: DocumentMetadata(), description="文档元数据")
     dense_score: Optional[float] = Field(default=None, description="稠密检索分数")
-    bm25_score: Optional[float] = Field(default=None, description="BM25 分数")
+    bm25_score: Optional[float] = Field(default=None, description="稀疏检索 BM25 分数")
     rerank_score: Optional[float] = Field(default=None, description="重排序分数")
 
 

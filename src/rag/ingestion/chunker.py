@@ -61,7 +61,7 @@ def build_chunk_patch(nodes: List[BaseNode], min_chunk_size: int, chunk_size: in
 
 
 def merge_small_pdf_nodes(nodes: Sequence[Document]) -> List[Document]:
-    """Merge very small continuation pages back into the previous PDF node."""
+    """将很小的 PDF 延续页合并回前一个节点。"""
     if not nodes:
         return []
 

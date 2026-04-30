@@ -81,6 +81,6 @@ def build_fact_lora_example(node_id: str, evidence_doc: dict, facts: list[Any]) 
     }
 
 
-# Backward-compatible aliases for older script names and notebooks.
+# 为旧脚本名称和 Notebook 保留的向后兼容别名。
 serialize_fact_for_sft = serialize_fact_for_lora
 build_fact_sft_example = build_fact_lora_example

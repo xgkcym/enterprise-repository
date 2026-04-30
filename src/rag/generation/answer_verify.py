@@ -11,8 +11,8 @@ from src.prompts.rag.answer_verify import VERIFY_PROMPT
 
 
 class AnswerVerifyResult(BaseModel):
-    valid: bool = Field(..., description="Whether the answer is fully supported by the context")
-    reason: Optional[str] = Field(default=None, description="Why the answer failed or passed")
+    valid: bool = Field(..., description="答案是否完全由上下文支持")
+    reason: Optional[str] = Field(default=None, description="答案通过或失败的原因")
 
 
 def verify_answer(llm: BaseChatModel, context: str, answer: str) -> AnswerVerifyResult:

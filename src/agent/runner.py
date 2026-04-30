@@ -118,7 +118,7 @@ def run_agent(
     output_level: str | None = None,
     answer_token_handler: AnswerTokenHandler | None = None,
 ) -> State:
-    """Run the agent graph and return the final state."""
+    """运行 Agent 图并返回最终状态。"""
     from src.agent.graph import graph
 
     resolved_output_level = (
@@ -179,7 +179,7 @@ def run_agent(
 
 
 def summarize_trace(state: State) -> list[dict[str, Any]]:
-    """Convert trace records into a JSON-friendly list."""
+    """将追踪记录转换为便于 JSON 序列化的列表。"""
     rows = []
     for item in state.trace:
         rows.append(
@@ -407,15 +407,15 @@ def print_run_report(state: State) -> None:
 
 
 if __name__ == "__main__":
-    # parser = argparse.ArgumentParser(description="Run the Agentic RAG graph for local validation.")
+    # parser = argparse.ArgumentParser(description="在本地运行 Agentic RAG 图进行验证。")
     # parser.add_argument(
     #     "query",
     #     default="根据多个会议记录，不同部门对新能源行业景气度的看法有哪些共同点和差异？",
-    #     help="User query",
+    #     help="用户问题",
     # )
-    # parser.add_argument("--user-id", default="", help="User ID")
-    # parser.add_argument("--session-id", default="", help="Session ID")
-    # parser.add_argument("--max-steps", type=int, default=6, help="Maximum agent steps")
+    # parser.add_argument("--user-id", default="", help="用户 ID")
+    # parser.add_argument("--session-id", default="", help="会话 ID")
+    # parser.add_argument("--max-steps", type=int, default=6, help="最大 Agent 步数")
     # args = parser.parse_args()
 
     final_state = run_agent(

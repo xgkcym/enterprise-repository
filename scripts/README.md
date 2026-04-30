@@ -16,6 +16,7 @@ python scripts/<script_name>.py
 | 📤 | `export_db_exports.py` | 将当前 PostgreSQL / MongoDB 数据导出到 `db/` 目录 |
 | 📥 | `import_db_exports.py` | 从 `db/` 目录导入 PostgreSQL / MongoDB 数据 |
 | ❓ | `generate_qa_dataset.py` | 从已入库文档生成 QA 数据，或批量回滚文档 QA 状态 |
+| 📏 | `run_benchmark.py` | 使用 MongoDB 中的 QA 数据执行离线评估 |
 | 🧾 | `export_financial_fact_lora.py` | 从金融事实图谱导出 LoRA 训练样本 |
 | 📁 | `prepare_financial_fact_lora_from_data.py` | 从本地 `data/` 目录构建金融事实 LoRA 训练样本 |
 | 🧠 | `train_financial_fact_extractor.py` | 训练金融事实抽取 LoRA 适配器 |
@@ -149,7 +150,30 @@ python scripts/generate_qa_dataset.py --rollback-all --rollback-from-state 1 --r
 python scripts/generate_qa_dataset.py --rollback-all --rollback-from-state 1 --rollback-to-state 2
 ```
 
-## 🧾 4. LoRA 数据准备
+## 📏 4. 离线评估
+
+### `run_benchmark.py`
+
+用于读取 MongoDB 中的 QA 数据并执行当前项目内置的离线评估。
+
+```bash
+python scripts/run_benchmark.py
+python scripts/run_benchmark.py --export-path data/benchmarks/benchmark_summary.json
+```
+
+主要参数：
+
+| 参数 | 作用 |
+| --- | --- |
+| `--export-path` | 可选，将本次评估结果额外导出为 JSON 文件 |
+
+说明：
+
+- 当前评估入口会执行检索评估、重排评估和生成评估。
+- 当前只会读取 QA 集合中 `state=0` 的记录。
+- 如果输出“暂无新评估数据”，表示当前没有可用于评估的 `state=0` QA 数据。
+
+## 🧾 5. LoRA 数据准备
 
 ### `export_financial_fact_lora.py`
 
@@ -225,7 +249,7 @@ python scripts/prepare_financial_fact_lora_from_data.py --patterns "*.pdf,*.txt,
 - `json`
 - `jsonl`
 
-## 🧠 5. LoRA 训练
+## 🧠 6. LoRA 训练
 
 ### `train_financial_fact_extractor.py`
 

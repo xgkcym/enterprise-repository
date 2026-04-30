@@ -180,7 +180,7 @@ class MemoryService:
 
     def save_records(self, records: list[MemoryRecord]) -> list[str]:
         if not self.store.is_available():
-            raise RuntimeError("Memory store is not available")
+            raise RuntimeError("记忆存储不可用")
         if not records:
             return []
 
@@ -188,7 +188,7 @@ class MemoryService:
         for record in records:
             vector = self.embed_text(record.summary or record.content)
             if not vector:
-                raise ValueError("Memory record cannot be embedded")
+                raise ValueError("记忆记录无法生成向量")
             if settings.memory_backend == "milvus" and len(vector) != settings.milvus_vector_dim:
                 raise ValueError(
                     f"Memory vector dim mismatch: expected {settings.milvus_vector_dim}, got {len(vector)}"

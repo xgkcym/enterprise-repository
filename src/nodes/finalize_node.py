@@ -46,7 +46,7 @@ def _normalize_citations(raw_citations, allowed_citations: list[str]) -> list[st
 
 def _build_sub_query_context(state: State) -> str:
     if not state.sub_query_results:
-        return "No sub-query evidence."
+        return "无子查询证据。"
 
     blocks = []
     for index, item in enumerate(state.sub_query_results, start=1):
@@ -54,11 +54,11 @@ def _build_sub_query_context(state: State) -> str:
         blocks.append(
             "\n".join(
                 [
-                    f"[Sub-query {index}]",
-                    f"Question: {item.sub_query}",
-                    f"Evidence summary: {summary}",
-                    f"Is sufficient: {item.is_sufficient}",
-                    f"Fail reason: {item.fail_reason or ''}",
+                    f"[子查询 {index}]",
+                    f"问题：{item.sub_query}",
+                    f"证据摘要：{summary}",
+                    f"证据是否充分：{item.is_sufficient}",
+                    f"失败原因：{item.fail_reason or ''}",
                 ]
             )
         )
@@ -71,15 +71,15 @@ def _append_long_term_memory_hint(state: State, prompt: str, *, stream_mode: boo
         return prompt
 
     instructions = (
-        "Long-term memory can be used for user language/style preferences and other saved personal preferences.\n"
-        "If the current evidence already supports the answer, do not let long-term memory change, extend, or override the evidence-based conclusion.\n"
-        "Only use long-term memory content directly when the user explicitly asks about their own saved profile, preferences, identity, or history and the answer is not otherwise grounded in retrieved evidence.\n"
-        "Do not use long-term memory as documentary evidence for enterprise facts, retrieved evidence, uploaded files, external facts, or real-time information.\n"
-        "If it conflicts with current evidence, trust the current evidence.\n"
-        "If it conflicts with the current chat context, trust the current chat context.\n"
-        "Do not mention hidden memory systems.\n"
+        "长时记忆可用于用户语言、风格偏好以及其他已保存的个人偏好。\n"
+        "如果当前证据已经支持答案，不要让长时记忆改变、扩展或覆盖基于证据的结论。\n"
+        "仅当用户明确询问自己的已保存画像、偏好、身份或历史，且答案无法由检索证据支撑时，才直接使用长时记忆内容。\n"
+        "不要将长时记忆当作企业事实、检索证据、已上传文件、外部事实或实时信息的文档证据。\n"
+        "如果长时记忆与当前证据冲突，信任当前证据。\n"
+        "如果长时记忆与当前对话上下文冲突，信任当前对话上下文。\n"
+        "不要提及隐藏的记忆系统。\n"
     )
-    section_title = "[Long-term Memory Hint]" if stream_mode else "[Long-term Memory Context]"
+    section_title = "[长时记忆提示]" if stream_mode else "[长时记忆上下文]"
     return f"{prompt}\n\n{section_title}\n{context}\n\n{instructions}"
 
 
@@ -93,13 +93,13 @@ def _build_finalize_prompt(
     prompt = FINALIZE_PROMPT.format(
         raw_query=state.query or "",
         query=effective_query,
-        evidence_summary=evidence_summary or "No evidence summary available.",
+        evidence_summary=evidence_summary or "无可用证据摘要。",
         sub_query_context=_build_sub_query_context(state),
-        available_citations=", ".join(citations) if citations else "None",
+        available_citations=", ".join(citations) if citations else "无",
         output_level=state.output_level,
         preferred_language=_preferred_language(state),
-        prefers_citations="yes" if _prefers_citations(state) else "no",
-        preferred_topics=", ".join(_preferred_topics(state)) or "None",
+        prefers_citations="是" if _prefers_citations(state) else "否",
+        preferred_topics=", ".join(_preferred_topics(state)) or "无",
     )
     return _append_long_term_memory_hint(state, prompt, stream_mode=False)
 
@@ -113,11 +113,11 @@ def _build_finalize_stream_prompt(
     prompt = FINALIZE_STREAM_PROMPT.format(
         raw_query=state.query or "",
         query=effective_query,
-        evidence_summary=evidence_summary or "No evidence summary available.",
+        evidence_summary=evidence_summary or "无可用证据摘要。",
         sub_query_context=_build_sub_query_context(state),
         output_level=state.output_level,
         preferred_language=_preferred_language(state),
-        preferred_topics=", ".join(_preferred_topics(state)) or "None",
+        preferred_topics=", ".join(_preferred_topics(state)) or "无",
     ).strip()
     return _append_long_term_memory_hint(state, prompt, stream_mode=True)
 
@@ -138,9 +138,9 @@ def _build_fallback_final_answer(state: State) -> FinalAnswerResult:
     if evidence_summary:
         answer = evidence_summary
     elif fail_reason == "no_data":
-        answer = "No reliable financial-report evidence was retrieved for this question."
+        answer = "未能为这个问题检索到可靠的财报证据。"
     else:
-        answer = "Current evidence is insufficient to produce a reliable answer."
+        answer = "当前证据不足，无法生成可靠答案。"
 
     return FinalAnswerResult(
         success=bool(answer) and is_sufficient,
@@ -203,7 +203,7 @@ def _stream_finalize_result(
 ) -> FinalAnswerResult:
     handler = get_answer_token_handler()
     if handler is None:
-        raise RuntimeError("answer token handler is not bound")
+        raise RuntimeError("回答 token 处理器未绑定")
 
     def on_token(token: str) -> None:
         handler(token)

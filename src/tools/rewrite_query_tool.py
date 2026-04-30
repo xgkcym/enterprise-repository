@@ -11,13 +11,13 @@ from src.types.base_type import BaseNodeResult
 
 
 class RewriteResult(BaseNodeResult):
-    name: Optional[str] = Field(default="rewrite_query", description="tool name")
-    max_attempt: Optional[int] = Field(default=2, description="max attempts")
-    answer: Optional[str] = Field(default="", description="rewritten query")
+    name: Optional[str] = Field(default="rewrite_query", description="工具名称")
+    max_attempt: Optional[int] = Field(default=2, description="最大尝试次数")
+    answer: Optional[str] = Field(default="", description="改写后的查询")
 
 
 class RewriteStructuredResult(BaseModel):
-    answer: Optional[str] = Field(default="", description="rewritten query")
+    answer: Optional[str] = Field(default="", description="改写后的查询")
 
 
 def rewrite_query_tool(

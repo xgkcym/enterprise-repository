@@ -39,7 +39,7 @@ def _maybe_resize_for_remote(img: np.ndarray) -> np.ndarray:
 def _encode_png(img: np.ndarray) -> bytes:
     success, encoded = cv2.imencode(".png", img)
     if not success:
-        raise RuntimeError("Failed to encode image payload for OCR service request.")
+        raise RuntimeError("无法为 OCR 服务请求编码图片负载。")
     return encoded.tobytes()
 
 
@@ -76,7 +76,7 @@ def remote_ocr_image(
 ) -> str:
     service_url = (settings.ocr_service_url or "").strip()
     if not service_url:
-        raise RuntimeError("OCR_BACKEND is set to remote but OCR_SERVICE_URL is empty.")
+        raise RuntimeError("无法执行远程 OCR：OCR_BACKEND 已设置为 remote，但 OCR_SERVICE_URL 为空。")
 
     endpoint = f"{service_url.rstrip('/')}/ocr"
     payload = {
@@ -117,7 +117,7 @@ def remote_ocr_image(
                         payload_shape=payload_shape,
                         attempts=attempts,
                     )
-                    raise RuntimeError(f"Remote OCR request failed: {context}: {exc}") from exc
+                    raise RuntimeError(f"远程 OCR 请求失败: {context}: {exc}") from exc
                 continue
             except httpx.HTTPStatusError as exc:
                 context = _format_failure_context(
@@ -126,7 +126,7 @@ def remote_ocr_image(
                     payload_shape=payload_shape,
                     attempts=attempt,
                 )
-                raise RuntimeError(f"Remote OCR request failed: {context}: {exc}") from exc
+                raise RuntimeError(f"远程 OCR 请求失败: {context}: {exc}") from exc
             except httpx.HTTPError as exc:
                 context = _format_failure_context(
                     endpoint=endpoint,
@@ -134,7 +134,7 @@ def remote_ocr_image(
                     payload_shape=payload_shape,
                     attempts=attempt,
                 )
-                raise RuntimeError(f"Remote OCR request failed: {context}: {exc}") from exc
+                raise RuntimeError(f"远程 OCR 请求失败: {context}: {exc}") from exc
         else:
             context = _format_failure_context(
                 endpoint=endpoint,
@@ -143,15 +143,15 @@ def remote_ocr_image(
                 attempts=attempts,
             )
             detail = last_exception or "unknown error"
-            raise RuntimeError(f"Remote OCR request failed: {context}: {detail}")
+            raise RuntimeError(f"远程 OCR 请求失败: {context}: {detail}")
     finally:
         limiter.release()
 
     if response is None:
-        raise RuntimeError("OCR service returned an empty response.")
+        raise RuntimeError("服务返回了空的 OCR 响应。")
 
     data = response.json()
     text = data.get("text")
     if not isinstance(text, str):
-        raise RuntimeError("OCR service returned an invalid response payload.")
+        raise RuntimeError("服务返回了无效的 OCR 响应负载。")
     return text

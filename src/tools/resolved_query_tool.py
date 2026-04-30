@@ -11,13 +11,13 @@ from src.types.base_type import BaseNodeResult
 
 
 class ResolvedQueryResult(BaseNodeResult):
-    name: Optional[str] = Field(default="resolved_query", description="tool name")
-    max_attempt: Optional[int] = Field(default=1, description="max attempts")
-    answer: Optional[str] = Field(default="", description="resolved query")
+    name: Optional[str] = Field(default="resolved_query", description="工具名称")
+    max_attempt: Optional[int] = Field(default=1, description="最大尝试次数")
+    answer: Optional[str] = Field(default="", description="整理后的查询")
 
 
 class ResolvedQueryStructuredResult(BaseModel):
-    answer: Optional[str] = Field(default="", description="resolved query")
+    answer: Optional[str] = Field(default="", description="整理后的查询")
 
 
 def _resolved_query(query: str) -> str:

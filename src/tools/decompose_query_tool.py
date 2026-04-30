@@ -10,12 +10,12 @@ from src.types.base_type import BaseNodeResult
 
 
 class DecomposeResult(BaseNodeResult):
-    name: Optional[str] = Field(default="decompose_query", description="tool name")
-    answer: List[str] = Field(default_factory=list, description="decomposed sub queries")
+    name: Optional[str] = Field(default="decompose_query", description="工具名称")
+    answer: List[str] = Field(default_factory=list, description="拆解后的子问题")
 
 
 class DecomposeStructuredResult(BaseModel):
-    answer: List[str] = Field(default_factory=list, description="decomposed sub queries")
+    answer: List[str] = Field(default_factory=list, description="拆解后的子问题")
 
 
 def _normalize_sub_queries(queries: list[str]) -> list[str]:

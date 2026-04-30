@@ -22,7 +22,7 @@ from core.settings import settings
 from src.rag.ocr_client import remote_ocr_image
 
 def iter_docx_blocks(doc: DocxDocument):
-    """Yield paragraphs and tables in their original document order."""
+    """按原始文档顺序产出段落和表格。"""
     for child in doc.element.body.iterchildren():
         if isinstance(child, CT_P):
             yield Paragraph(child, doc)
@@ -31,7 +31,7 @@ def iter_docx_blocks(doc: DocxDocument):
 
 
 def load_txt(path: str, metadata: DocumentMetadata) -> Sequence[LlamaDocument]:
-    """Load a plain text file into a single document."""
+    """将纯文本文件加载为单个文档。"""
     with open(path, "r", encoding="utf-8") as f:
         text = f.read()
     metadata.source = metadata.source or metadata.file_type
@@ -40,7 +40,7 @@ def load_txt(path: str, metadata: DocumentMetadata) -> Sequence[LlamaDocument]:
 
 
 def load_docx(file_path: str, metadata: DocumentMetadata) -> Sequence[LlamaDocument]:
-    """Load a Word document by heading sections and tables."""
+    """按标题分节和表格加载 Word 文档。"""
     doc = Document(file_path)
     sections = []
     current_section = ""
@@ -97,7 +97,7 @@ def extract_md_title(text: str) -> str | None:
 
 
 def load_markdown(path: str, metadata: DocumentMetadata) -> Sequence[LlamaDocument]:
-    """Load a markdown file by title sections."""
+    """按标题分节加载 Markdown 文件。"""
     with open(path, "r", encoding="utf-8") as f:
         text = f.read()
 
@@ -117,7 +117,7 @@ def load_markdown(path: str, metadata: DocumentMetadata) -> Sequence[LlamaDocume
 
 
 def ocr_image(img: np.ndarray, min_score: float | None = settings.orc_min_score) -> str:
-    """Run OCR on an image and return extracted text."""
+    """对图片执行 OCR 并返回提取出的文本。"""
     score_threshold = 0.0 if min_score is None else min_score
     return remote_ocr_image(
         img,
@@ -127,7 +127,7 @@ def ocr_image(img: np.ndarray, min_score: float | None = settings.orc_min_score)
 
 
 def preprocess_image(img: np.ndarray) -> np.ndarray:
-    """Ensure the image is converted to RGB/BGR-compatible format."""
+    """确保图片转换为 RGB/BGR 兼容格式。"""
     if img.ndim == 2:
         img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
     elif img.shape[2] == 4:
@@ -136,12 +136,12 @@ def preprocess_image(img: np.ndarray) -> np.ndarray:
 
 
 def extract_pdf_title(text: str) -> bool:
-    """Use simple heuristics to detect PDF section titles."""
+    """使用简单启发式规则识别 PDF 章节标题。"""
     text = re.sub(r"\s+", " ", text).strip()
     if not text:
         return False
-    # Bias toward citation correctness over aggressive title detection:
-    # sentence-like fragments are treated as body text, not new sections.
+    # 优先保证引用准确性，避免过度识别标题：
+    # 类似句子的片段按正文处理，而不是新章节。
     if re.search(r"[，,。；;：:！？!?]", text):
         return False
     if len(text) < 30 and re.match(r"^[0-9一二三四五六七八九十]+(?:\.[0-9]+)*[.、]?\s*\S+$", text):
@@ -152,14 +152,14 @@ def extract_pdf_title(text: str) -> bool:
 
 
 def normalize_pdf_margin_text(text: str) -> str:
-    """Normalize header/footer candidates for repeated-text detection."""
+    """规范化页眉/页脚候选文本，用于重复文本检测。"""
     normalized = re.sub(r"\s+", " ", text).strip()
     normalized = re.sub(r"\d+", "<num>", normalized)
     return normalized
 
 
 def is_pdf_margin_block(block: tuple, page_height: float) -> bool:
-    """Return True when a block sits in the top/bottom margin area."""
+    """当文本块位于页面顶部或底部边距区域时返回 True。"""
     y0, y1 = block[1], block[3]
     top_limit = page_height * 0.12
     bottom_limit = page_height * 0.88
@@ -167,7 +167,7 @@ def is_pdf_margin_block(block: tuple, page_height: float) -> bool:
 
 
 def should_skip_pdf_margin_text(text: str, repeated_margin_texts: set[str]) -> bool:
-    """Skip likely header/footer snippets and bare page-number text."""
+    """跳过疑似页眉/页脚片段和独立页码文本。"""
     normalized = normalize_pdf_margin_text(text)
     if normalized in repeated_margin_texts:
         return True
@@ -179,7 +179,7 @@ def should_skip_pdf_margin_text(text: str, repeated_margin_texts: set[str]) -> b
 
 
 def load_pdf(path: str, metadata: DocumentMetadata) -> Sequence[LlamaDocument]:
-    """Load a PDF file page by page, falling back to OCR when text extraction is weak."""
+    """逐页加载 PDF；当文本提取效果较弱时回退到 OCR。"""
     pdf = fitz.open(path)
     documents = []
     current_title = ""
@@ -269,7 +269,7 @@ def load_excel(
     metadata: DocumentMetadata,
     header_mode=settings.excel_header_mode,
 ) -> Sequence[LlamaDocument]:
-    """Load an Excel file and convert rows into Llama documents."""
+    """加载 Excel 文件，并将行内容转换为 Llama 文档。"""
     documents = []
     xls = pd.ExcelFile(file_path)
 
@@ -317,7 +317,7 @@ def load_csv(
     metadata: DocumentMetadata,
     header_mode=settings.excel_header_mode,
 ) -> Sequence[LlamaDocument]:
-    """Load a CSV file using the same chunking strategy as Excel."""
+    """使用与 Excel 相同的切分策略加载 CSV 文件。"""
     documents = []
     df = pd.read_csv(file_path, dtype=str)
     df.fillna("", inplace=True)
@@ -359,7 +359,7 @@ def load_csv(
 
 
 def load_pptx(file_path: str, metadata: DocumentMetadata) -> Sequence[LlamaDocument]:
-    """Load a PowerPoint file by slide."""
+    """按幻灯片加载 PowerPoint 文件。"""
     prs = Presentation(file_path)
     documents = []
 
