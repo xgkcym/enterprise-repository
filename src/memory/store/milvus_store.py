@@ -9,6 +9,10 @@ from src.memory.store.base import BaseMemoryStore
 from src.types.memory_type import MemoryRecord, MemoryRecallQuery
 
 
+def _get_setting(name: str, default):
+    return getattr(settings, name, default)
+
+
 class MilvusMemoryStore(BaseMemoryStore):
     backend = "milvus"
 
@@ -18,9 +22,9 @@ class MilvusMemoryStore(BaseMemoryStore):
         self._last_error: str | None = None
 
     def is_available(self) -> bool:
-        if not settings.memory_enabled or settings.memory_backend != "milvus":
+        if not _get_setting("memory_enabled", False) or _get_setting("memory_backend", "disabled") != "milvus":
             return False
-        if not settings.milvus_uri:
+        if not _get_setting("milvus_uri", ""):
             return False
         return self._ensure_client() is not None
 
@@ -48,8 +52,8 @@ class MilvusMemoryStore(BaseMemoryStore):
             return None
 
     def _client_kwargs(self, *, db_name: str | None = None) -> dict[str, Any]:
-        kwargs: dict[str, Any] = {"uri": self._normalized_uri(settings.milvus_uri)}
-        token = (settings.milvus_token or "").strip()
+        kwargs: dict[str, Any] = {"uri": self._normalized_uri(_get_setting("milvus_uri", ""))}
+        token = (_get_setting("milvus_token", "") or "").strip()
         if token:
             kwargs["token"] = token
         if db_name:
@@ -67,7 +71,7 @@ class MilvusMemoryStore(BaseMemoryStore):
 
     @staticmethod
     def _target_db_name() -> str | None:
-        raw_name = (settings.milvus_db_name or "").strip()
+        raw_name = (_get_setting("milvus_db_name", "default") or "").strip()
         return raw_name or None
 
     def _ensure_database_exists(self, client_cls: Any) -> None:
@@ -104,7 +108,7 @@ class MilvusMemoryStore(BaseMemoryStore):
         client = self._client
         if client is None:
             return
-        if client.has_collection(collection_name=settings.milvus_collection_name):
+        if client.has_collection(collection_name=_get_setting("milvus_collection_name", "long_term_memory")):
             return
 
         from pymilvus import DataType
@@ -128,20 +132,20 @@ class MilvusMemoryStore(BaseMemoryStore):
         schema.add_field(field_name="importance", datatype=DataType.FLOAT)
         schema.add_field(field_name="confidence", datatype=DataType.FLOAT)
         schema.add_field(field_name="metadata_json", datatype=DataType.VARCHAR, max_length=4096)
-        schema.add_field(field_name="vector", datatype=DataType.FLOAT_VECTOR, dim=settings.milvus_vector_dim)
+        schema.add_field(field_name="vector", datatype=DataType.FLOAT_VECTOR, dim=_get_setting("milvus_vector_dim", 1536))
 
         index_params = client.prepare_index_params()
         index_params.add_index(
             field_name="vector",
-            index_type=settings.milvus_index_type,
-            metric_type=settings.milvus_search_metric,
+            index_type=_get_setting("milvus_index_type", "AUTOINDEX"),
+            metric_type=_get_setting("milvus_search_metric", "COSINE"),
         )
 
         client.create_collection(
-            collection_name=settings.milvus_collection_name,
+            collection_name=_get_setting("milvus_collection_name", "long_term_memory"),
             schema=schema,
             index_params=index_params,
-            consistency_level=settings.milvus_consistency_level,
+            consistency_level=_get_setting("milvus_consistency_level", "Strong"),
         )
 
     @staticmethod
@@ -232,9 +236,9 @@ class MilvusMemoryStore(BaseMemoryStore):
         if not payloads:
             return
 
-        client.upsert(collection_name=settings.milvus_collection_name, data=payloads)
+        client.upsert(collection_name=_get_setting("milvus_collection_name", "long_term_memory"), data=payloads)
         if flush:
-            client.flush(collection_name=settings.milvus_collection_name)
+            client.flush(collection_name=_get_setting("milvus_collection_name", "long_term_memory"))
 
     def _record_from_hit(self, hit: dict[str, Any]) -> MemoryRecord:
         entity = hit.get("entity") or hit
@@ -271,12 +275,12 @@ class MilvusMemoryStore(BaseMemoryStore):
 
         try:
             results = client.search(
-                collection_name=settings.milvus_collection_name,
+                collection_name=_get_setting("milvus_collection_name", "long_term_memory"),
                 data=[query_vector],
                 anns_field="vector",
                 filter=self._build_filter(query),
                 limit=query.top_k,
-                consistency_level=settings.milvus_consistency_level,
+                consistency_level=_get_setting("milvus_consistency_level", "Strong"),
                 output_fields=self._output_fields(),
             )
         except Exception as exc:
@@ -314,9 +318,9 @@ class MilvusMemoryStore(BaseMemoryStore):
         expr = f"user_id == {self._quote(user_id)} and dedupe_key == {self._quote(dedupe_key)}"
         try:
             results = client.query(
-                collection_name=settings.milvus_collection_name,
+                collection_name=_get_setting("milvus_collection_name", "long_term_memory"),
                 filter=expr,
-                consistency_level=settings.milvus_consistency_level,
+                consistency_level=_get_setting("milvus_consistency_level", "Strong"),
                 output_fields=self._output_fields(),
             )
         except Exception as exc:
@@ -334,9 +338,9 @@ class MilvusMemoryStore(BaseMemoryStore):
 
         try:
             rows = client.query(
-                collection_name=settings.milvus_collection_name,
+                collection_name=_get_setting("milvus_collection_name", "long_term_memory"),
                 ids=memory_ids,
-                consistency_level=settings.milvus_consistency_level,
+                consistency_level=_get_setting("milvus_consistency_level", "Strong"),
                 output_fields=self._output_fields(include_vector=True),
             )
         except Exception as exc:

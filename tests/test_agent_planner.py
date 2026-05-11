@@ -38,6 +38,19 @@ for _key, _value in _TEST_ENV.items():
     os.environ.setdefault(_key, _value)
 
 
+_STUBBED_MODULES = {
+    name: sys.modules.get(name)
+    for name in [
+        "core.settings",
+        "src.graph.planner",
+        "langchain_core",
+        "langchain_core.messages",
+        "src.config.llm_config",
+        "src.models.llm",
+    ]
+}
+
+
 if "core.settings" not in sys.modules:
     settings_module = types.ModuleType("core.settings")
     settings_module.settings = SimpleNamespace(
@@ -88,13 +101,66 @@ if "src.models.llm" not in sys.modules:
     llm_module.chatgpt_llm = object()
     sys.modules["src.models.llm"] = llm_module
 
-from src.agent.action_planner import choose_next_action
-from src.agent.policy import get_allowed_actions
-from src.nodes.agent_node import agent_node
-from src.types.agent_state import State
-from src.types.event_type import MemoryEvent, ReasoningEvent, ToolEvent
-from src.types.policy_type import AgentPlannerDecision, AgentPlannerStructuredDecision
-from src.types.rag_type import RAGResult
+
+def _restore_stubbed_modules() -> None:
+    for name, original in _STUBBED_MODULES.items():
+        if original is None:
+            sys.modules.pop(name, None)
+        else:
+            sys.modules[name] = original
+
+
+def _load_test_subjects():
+    from src.agent import action_planner as action_planner_module
+    from src.agent import policy as policy_module
+    from src.nodes import agent_node as agent_node_module
+    from src.types.agent_state import State
+    from src.types.event_type import MemoryEvent, ReasoningEvent, ToolEvent
+    from src.types.policy_type import AgentPlannerDecision, AgentPlannerStructuredDecision
+    from src.types.rag_type import RAGResult
+
+    return (
+        action_planner_module,
+        policy_module,
+        agent_node_module,
+        State,
+        MemoryEvent,
+        ReasoningEvent,
+        ToolEvent,
+        AgentPlannerDecision,
+        AgentPlannerStructuredDecision,
+        RAGResult,
+    )
+
+
+(
+    action_planner_module,
+    policy_module,
+    agent_node_module,
+    State,
+    MemoryEvent,
+    ReasoningEvent,
+    ToolEvent,
+    AgentPlannerDecision,
+    AgentPlannerStructuredDecision,
+    RAGResult,
+) = _load_test_subjects()
+
+choose_next_action = action_planner_module.choose_next_action
+get_allowed_actions = policy_module.get_allowed_actions
+agent_node = agent_node_module.agent_node
+
+_restore_stubbed_modules()
+for _module_name in [
+    "src.agent.action_planner",
+    "src.agent.policy",
+    "src.nodes.agent_node",
+    "src.types.agent_state",
+    "src.types.event_type",
+    "src.types.policy_type",
+    "src.types.rag_type",
+]:
+    sys.modules.pop(_module_name, None)
 
 
 def _build_initial_state(query: str) -> State:
@@ -135,8 +201,9 @@ class AgentPlannerTests(unittest.TestCase):
     def test_planner_falls_back_when_llm_returns_invalid_action(self):
         state = _build_initial_state("Compare revenue between 2024 and 2025")
 
-        with patch(
-            "src.agent.action_planner.LLMService.invoke",
+        with patch.object(
+            action_planner_module.LLMService,
+            "invoke",
             return_value=AgentPlannerDecision(
                 next_action="web_search",
                 reason="invalid for this candidate set",
@@ -160,7 +227,7 @@ class AgentPlannerTests(unittest.TestCase):
                 confidence=0.91,
             )
 
-        with patch("src.agent.action_planner.LLMService.invoke", side_effect=fake_invoke):
+        with patch.object(action_planner_module.LLMService, "invoke", side_effect=fake_invoke):
             decision = choose_next_action(state, ["graph_rag", "rag"], planning_stage="initial")
 
         self.assertTrue(decision.success)
@@ -169,8 +236,9 @@ class AgentPlannerTests(unittest.TestCase):
     def test_agent_node_uses_planner_result_for_initial_route(self):
         state = _build_initial_state("Compare revenue between 2024 and 2025")
 
-        with patch(
-            "src.nodes.agent_node.choose_next_action",
+        with patch.object(
+            agent_node_module,
+            "choose_next_action",
             return_value=AgentPlannerDecision(
                 success=True,
                 next_action="graph_rag",
@@ -227,8 +295,9 @@ class AgentPlannerTests(unittest.TestCase):
         )
         state = _build_rag_followup_state("Compare revenue between 2024 and 2025", rag_result)
 
-        with patch(
-            "src.nodes.agent_node.choose_next_action",
+        with patch.object(
+            agent_node_module,
+            "choose_next_action",
             return_value=AgentPlannerDecision(
                 success=True,
                 next_action="rag",

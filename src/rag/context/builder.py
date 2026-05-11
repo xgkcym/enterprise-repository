@@ -5,13 +5,17 @@ from core.settings import settings
 
 
 _WHITESPACE_PATTERN = re.compile(r"\s+")
+_DEFAULT_CONTEXT_MAX_LEN = 4000
 
 
 class ContextBuilder:
     """Build the traditional RAG context consumed by generation."""
 
     def __init__(self, max_length: int | None = None):
-        self.max_length = int(max_length or settings.context_max_len)
+        resolved_max_length = getattr(settings, "context_max_len", None) if max_length is None else max_length
+        if resolved_max_length is None:
+            resolved_max_length = _DEFAULT_CONTEXT_MAX_LEN
+        self.max_length = int(resolved_max_length)
 
     def _get_value(self, item: Any, key: str, default: Any = "") -> Any:
         if isinstance(item, dict):
@@ -55,7 +59,7 @@ class ContextBuilder:
 
     def _truncate_docs(self, docs, max_length: int | None = None):
         """Keep blocks in rank order while accounting for node_id headers."""
-        limit = int(max_length or self.max_length)
+        limit = int(self.max_length if max_length is None else max_length)
         total = 0
         results = []
 

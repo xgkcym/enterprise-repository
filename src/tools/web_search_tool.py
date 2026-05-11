@@ -1,4 +1,5 @@
 from typing import Iterable
+from functools import lru_cache
 
 from zhipuai import ZhipuAI
 
@@ -11,7 +12,12 @@ from src.types.rag_type import DocumentInfo, RAGResult
 from src.types.web_search_type import WebSearchContext
 
 
-zhipu_client = ZhipuAI(api_key=settings.zhipuai_api_key)
+@lru_cache(maxsize=1)
+def _get_zhipu_client() -> ZhipuAI:
+    api_key = (settings.zhipuai_api_key or "").strip()
+    if not api_key:
+        raise RuntimeError("ZHIPUAI_API_KEY is required to use web search.")
+    return ZhipuAI(api_key=api_key)
 
 
 def _dedupe_queries(queries: Iterable[str]) -> list[str]:
@@ -304,6 +310,7 @@ def web_search_tool(web_search_context: WebSearchContext) -> RAGResult:
         )
 
     try:
+        zhipu_client = _get_zhipu_client()
         collected_documents: list[DocumentInfo] = []
         # 初始化诊断信息，记录使用的搜索引擎
         diagnostics = [f"web_search_engine={web_search_context.search_engine}"]

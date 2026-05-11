@@ -4,6 +4,20 @@ import unittest
 from unittest.mock import patch
 
 
+_STUBBED_MODULES = {
+    name: sys.modules.get(name)
+    for name in [
+        "core.settings",
+        "langchain_core.language_models",
+        "langchain_core.messages",
+        "src.models.llm",
+        "src.config.llm_config",
+        "src.prompts.rag.qa_generation",
+        "utils.utils",
+    ]
+}
+
+
 if "core.settings" not in sys.modules:
     settings_module = types.ModuleType("core.settings")
     settings_module.settings = types.SimpleNamespace()
@@ -54,7 +68,26 @@ if "utils.utils" not in sys.modules:
     utils_module.get_current_time = lambda: "2026-04-25 00:00:00"
     sys.modules["utils.utils"] = utils_module
 
-from src.rag.evaluate.qa import QAResult, QaData, generate_qa
+
+def _restore_stubbed_modules() -> None:
+    for name, original in _STUBBED_MODULES.items():
+        if original is None:
+            sys.modules.pop(name, None)
+        else:
+            sys.modules[name] = original
+
+
+def _load_test_subjects():
+    from src.rag.evaluate import qa as qa_module
+    from src.rag.evaluate.qa import QAResult, QaData, generate_qa
+
+    return qa_module, QAResult, QaData, generate_qa
+
+
+qa_module, QAResult, QaData, generate_qa = _load_test_subjects()
+
+_restore_stubbed_modules()
+sys.modules.pop("src.rag.evaluate.qa", None)
 
 
 class QAGenerationTests(unittest.TestCase):
@@ -72,7 +105,7 @@ class QAGenerationTests(unittest.TestCase):
             ]
         )
 
-        with patch("src.rag.evaluate.qa.LLMService.invoke", return_value=response):
+        with patch.object(qa_module.LLMService, "invoke", return_value=response):
             rows = generate_qa(
                 llm=object(),
                 nodes=[
@@ -121,8 +154,8 @@ class QAGenerationTests(unittest.TestCase):
             {"node_id": "node-2", "content": "内容2"},
         ]
 
-        with patch("src.rag.evaluate.qa.LLMService.invoke", return_value=response):
-            with patch("src.rag.evaluate.qa.random.randrange", return_value=1):
+        with patch.object(qa_module.LLMService, "invoke", return_value=response):
+            with patch.object(qa_module.random, "randrange", return_value=1):
                 rows = generate_qa(llm=object(), nodes=nodes, metadata={"language": "zh-cn"})
 
         self.assertEqual(len(rows), 3)

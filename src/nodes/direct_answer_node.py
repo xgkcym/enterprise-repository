@@ -42,13 +42,13 @@ def _append_long_term_memory_hint(state: State, prompt: str, *, stream_mode: boo
         return prompt
 
     instructions = (
-        "长时记忆可作为用户已提供画像事实、偏好、身份信息和其他已保存个人事实的权威上下文。\n"
-        "如果用户询问自己此前说明过的信息，且长时记忆相关，可以直接基于长时记忆回答。\n"
-        "不要将长时记忆当作企业事实、已上传文件、外部事实或实时信息的文档证据。\n"
-        "如果长时记忆与当前对话上下文冲突，信任当前对话上下文。\n"
-        "不要提及隐藏的记忆系统。\n"
+        "Long-term memory can act as authoritative context for user-provided profile facts, preferences, identity information, and other saved personal facts.\n"
+        "If the user asks about information they previously stated and it is related to long-term memory, answer directly from long-term memory.\n"
+        "Do not use long-term memory as documentary evidence for company facts, uploaded files, external facts, or real-time information.\n"
+        "If long-term memory conflicts with the current chat context, trust the current chat context.\n"
+        "Do not mention the hidden memory system.\n"
     )
-    section_title = "[长时记忆提示]" if stream_mode else "[长时记忆上下文]"
+    section_title = "[Long-term Memory Context]" if stream_mode else "[Long-term Memory Context]"
     return f"{prompt}\n\n{section_title}\n{context}\n\n{instructions}"
 
 

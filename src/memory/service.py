@@ -55,7 +55,7 @@ class MemoryService:
 
     @staticmethod
     def _build_store() -> BaseMemoryStore:
-        if settings.memory_enabled and settings.memory_backend == "milvus":
+        if getattr(settings, "memory_enabled", False) and getattr(settings, "memory_backend", "disabled") == "milvus":
             return MilvusMemoryStore()
         return DisabledMemoryStore()
 
@@ -95,17 +95,17 @@ class MemoryService:
                 message="memory recall skipped",
                 diagnostics=["memory_recall_skipped_empty_vector"],
             )
-        if settings.memory_backend == "milvus" and len(vector) != settings.milvus_vector_dim:
+        if getattr(settings, "memory_backend", "disabled") == "milvus" and len(vector) != getattr(settings, "milvus_vector_dim", 1536):
             return MemoryRecallResult(
                 success=False,
                 message="memory recall failed",
                 diagnostics=[
-                    f"memory_vector_dim_mismatch expected={settings.milvus_vector_dim} actual={len(vector)}",
+                    f"memory_vector_dim_mismatch expected={getattr(settings, 'milvus_vector_dim', 1536)} actual={len(vector)}",
                 ],
             )
 
         memories = self.store.search(query, vector)
-        context = _build_memory_context(memories, limit=settings.memory_context_limit)
+        context = _build_memory_context(memories, limit=getattr(settings, "memory_context_limit", 3))
         used = bool(context)
 
         touch_count = 0
@@ -189,9 +189,9 @@ class MemoryService:
             vector = self.embed_text(record.summary or record.content)
             if not vector:
                 raise ValueError("记忆记录无法生成向量")
-            if settings.memory_backend == "milvus" and len(vector) != settings.milvus_vector_dim:
+            if getattr(settings, "memory_backend", "disabled") == "milvus" and len(vector) != getattr(settings, "milvus_vector_dim", 1536):
                 raise ValueError(
-                    f"Memory vector dim mismatch: expected {settings.milvus_vector_dim}, got {len(vector)}"
+                    f"Memory vector dim mismatch: expected {getattr(settings, 'milvus_vector_dim', 1536)}, got {len(vector)}"
                 )
             vectors.append(vector)
         return self.store.upsert_many(records, vectors)

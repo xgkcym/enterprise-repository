@@ -28,8 +28,8 @@ def memory_recall_node(state: State):
         user_id=str(state.user_id or (state.user_profile or {}).get("user_id") or ""),
         session_id=state.session_id or None,
         query=effective_query,
-        top_k=settings.memory_top_k,
-        min_score=settings.memory_recall_min_score,
+        top_k=getattr(settings, "memory_top_k", 3),
+        min_score=getattr(settings, "memory_recall_min_score", 0.35),
         scopes=["user", "session"] if state.session_id else ["user"],
     )
     result = memory_service.recall(recall_query)

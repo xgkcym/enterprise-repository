@@ -1,6 +1,8 @@
 import unittest
+from unittest.mock import patch
 
 from core.custom_types import DocumentMetadata
+from core.settings import settings
 from src.rag.context.builder import ContextBuilder
 from src.types.rag_type import DocumentInfo
 
@@ -73,6 +75,20 @@ class ContextBuilderTest(unittest.TestCase):
         self.assertLessEqual(len(context), 120)
         self.assertIn("[node_id:node-1]", context)
         self.assertNotIn("content:\n", context)
+
+    def test_uses_fallback_context_length_when_setting_is_missing(self):
+        docs = [
+            {
+                "node_id": "node-1",
+                "content": "The company reported steady growth.",
+            }
+        ]
+
+        with patch.object(settings, "context_max_len", None):
+            builder = ContextBuilder()
+
+        self.assertEqual(builder.max_length, 4000)
+        self.assertEqual(builder.run(docs), "[node_id:node-1]\nThe company reported steady growth.")
 
 
 if __name__ == "__main__":

@@ -7,7 +7,7 @@ from src.types.memory_type import MemoryWriteRequest, MemoryWriteResult
 
 
 def write_long_term_memory(request: MemoryWriteRequest) -> MemoryWriteResult:
-    if not settings.memory_enabled or not settings.memory_write_enabled:
+    if not getattr(settings, "memory_enabled", False) or not getattr(settings, "memory_write_enabled", False):
         return MemoryWriteResult(
             success=True,
             message="memory write skipped",
@@ -44,7 +44,7 @@ def write_long_term_memory(request: MemoryWriteRequest) -> MemoryWriteResult:
     records_to_write = []
 
     for candidate in candidates:
-        if candidate.importance < settings.memory_write_min_importance:
+        if candidate.importance < getattr(settings, "memory_write_min_importance", 0.65):
             skipped_count += 1
             continue
 

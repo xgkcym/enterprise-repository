@@ -9,6 +9,24 @@ from core.settings import settings
 from utils.logger_handler import logger
 
 
+_DEFAULT_MAX_RETRIES = 3
+_DEFAULT_MAX_TIMEOUT = 60.0
+
+
+def _resolve_retry_count() -> int:
+    retries = settings.max_retries
+    if isinstance(retries, int):
+        return max(0, retries)
+    return _DEFAULT_MAX_RETRIES
+
+
+def _resolve_timeout_threshold() -> float:
+    timeout = settings.max_timeout
+    if isinstance(timeout, (int, float)):
+        return max(0.0, float(timeout))
+    return _DEFAULT_MAX_TIMEOUT
+
+
 class LLMService:
     _usage_records: ContextVar[list[dict[str, Any]] | None] = ContextVar("llm_usage_records", default=None)
 
@@ -174,7 +192,8 @@ class LLMService:
         start = time.time()
         response = llm.invoke(messages)
         duration = time.time() - start
-        if duration > settings.max_timeout:
+        timeout_threshold = _resolve_timeout_threshold()
+        if duration > timeout_threshold:
             logger.warning(f"[LLM超时] 耗时: {duration:.2f}s")
         else:
             logger.info(f"[LLM调用成功] 耗时: {duration:.2f}s")
@@ -208,7 +227,8 @@ class LLMService:
                 usage = chunk_usage
 
         duration = time.time() - start
-        if duration > settings.max_timeout:
+        timeout_threshold = _resolve_timeout_threshold()
+        if duration > timeout_threshold:
             logger.warning(f"[LLM streaming timeout] duration: {duration:.2f}s")
         else:
             logger.info(f"[LLM streaming success] duration: {duration:.2f}s")
@@ -229,7 +249,7 @@ class LLMService:
         if schema:
             llm = llm.with_structured_output(schema, include_raw=True)
 
-        for i in range(settings.max_retries):
+        for i in range(_resolve_retry_count()):
             try:
                 return LLMService._invoke_once(llm, messages, schema=schema, model_name=model_name)
             except Exception as e:
@@ -266,7 +286,7 @@ class LLMService:
         last_exception = None
         model_name = LLMService._resolve_model_name(llm)
 
-        for i in range(settings.max_retries):
+        for i in range(_resolve_retry_count()):
             emitted = False
 
             def emit(token: str) -> None:
